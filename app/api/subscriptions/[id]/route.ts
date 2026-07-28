@@ -26,6 +26,7 @@ export async function PUT(
     if (body.name !== undefined) sub.name = body.name;
     if (body.amount !== undefined) sub.amount = Number(body.amount);
     if (body.quantity !== undefined) sub.quantity = Number(body.quantity);
+    if (body.currency !== undefined) sub.currency = body.currency;
     if (body.billingCycle !== undefined) sub.billingCycle = body.billingCycle;
     if (body.category !== undefined) sub.category = body.category;
     if (body.accountId !== undefined) sub.accountId = body.accountId;

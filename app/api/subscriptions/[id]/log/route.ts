@@ -4,6 +4,7 @@ import { getAuthUser } from "@/lib/auth";
 import Subscription from "@/models/Subscription";
 import Transaction from "@/models/Transaction";
 import Account from "@/models/Account";
+import { formatCurrency } from "@/lib/utils";
 
 export async function POST(
   req: NextRequest,
@@ -18,7 +19,7 @@ export async function POST(
     const { id } = await params;
     await connectDB();
 
-    const sub = await Subscription.findOne({ _id: id, userId: auth.userId });
+    const sub = await Subscription.findOne({ _id: id, userId: auth.userId }).populate("accountId");
     if (!sub) {
       return NextResponse.json({ error: "Subscription not found" }, { status: 404 });
     }
@@ -26,12 +27,14 @@ export async function POST(
     const qty = sub.quantity || 1;
     const totalAmount = sub.amount * qty;
     const itemTitle = qty > 1 ? `${sub.name} (x${qty}) Subscription` : `${sub.name} Subscription`;
+    const resolvedCurrency = sub.currency || (sub.accountId as any)?.currency || "USD";
 
-    // 1. Create Posted Expense Transaction
+    // 1. Create Posted Expense Transaction with matching subscription currency
     const transaction = await Transaction.create({
       userId: auth.userId,
       title: itemTitle,
       amount: totalAmount,
+      currency: resolvedCurrency,
       type: "expense",
       category: sub.category || "Subscriptions",
       accountId: sub.accountId,
@@ -66,15 +69,11 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `Expense logged for ${sub.name} (${formatCurrency(totalAmount)}). Next renewal set to ${nextDate.toISOString().split("T")[0]}`,
+      message: `Expense logged for ${sub.name} (${formatCurrency(totalAmount, resolvedCurrency)}). Next renewal set to ${nextDate.toISOString().split("T")[0]}`,
       transaction,
       subscription: sub,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Log subscription expense failed" }, { status: 500 });
   }
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 }

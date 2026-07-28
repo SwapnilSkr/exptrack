@@ -4,6 +4,7 @@ export interface IBudget extends Document {
   userId: mongoose.Types.ObjectId;
   category: string;
   monthlyLimit: number;
+  currency: string;
   period: "monthly" | "yearly";
   isSample?: boolean;
   createdAt: Date;
@@ -15,6 +16,7 @@ const BudgetSchema: Schema<IBudget> = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     category: { type: String, required: true },
     monthlyLimit: { type: Number, required: true },
+    currency: { type: String, default: "USD" },
     period: { type: String, enum: ["monthly", "yearly"], default: "monthly" },
     isSample: { type: Boolean, default: false },
   },

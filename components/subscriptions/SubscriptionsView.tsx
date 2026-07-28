@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Repeat, Plus, Zap, Trash2, Edit2, PauseCircle, PlayCircle } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
@@ -32,6 +32,7 @@ export default function SubscriptionsView({
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [currency, setCurrency] = useState(userCurrency);
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [category, setCategory] = useState("Subscriptions");
   const [accountId, setAccountId] = useState(accounts.length > 0 ? accounts[0]._id : "");
@@ -40,14 +41,28 @@ export default function SubscriptionsView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const currencies = ["USD", "EUR", "GBP", "INR", "CAD", "AUD", "JPY"];
+
+  // When payment account changes, auto-sync currency to matching account currency
+  useEffect(() => {
+    if (accountId && accounts.length > 0) {
+      const selectedAcc = accounts.find((a) => a._id === accountId);
+      if (selectedAcc && selectedAcc.currency) {
+        setCurrency(selectedAcc.currency);
+      }
+    }
+  }, [accountId, accounts]);
+
   const handleOpenAdd = () => {
     setEditingSub(null);
     setName("");
     setAmount("");
     setQuantity("1");
+    const defaultAcc = accounts.length > 0 ? accounts[0] : null;
+    setAccountId(defaultAcc ? defaultAcc._id : "");
+    setCurrency(defaultAcc && defaultAcc.currency ? defaultAcc.currency : userCurrency);
     setBillingCycle("monthly");
     setCategory("Subscriptions");
-    setAccountId(accounts.length > 0 ? accounts[0]._id : "");
     setNextBillingDate("");
     setStatus("active");
     setError("");
@@ -59,6 +74,7 @@ export default function SubscriptionsView({
     setName(sub.name);
     setAmount(sub.amount.toString());
     setQuantity((sub.quantity || 1).toString());
+    setCurrency(sub.currency || sub.accountId?.currency || userCurrency);
     setBillingCycle(sub.billingCycle || "monthly");
     setCategory(sub.category || "Subscriptions");
     setAccountId(sub.accountId?._id || sub.accountId || "");
@@ -91,6 +107,7 @@ export default function SubscriptionsView({
           name,
           amount: Number(amount),
           quantity: Number(quantity) || 1,
+          currency,
           billingCycle,
           category,
           accountId,
@@ -125,6 +142,16 @@ export default function SubscriptionsView({
     }
   };
 
+  const currencySymbolMap: Record<string, string> = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    INR: "₹",
+    CAD: "C$",
+    AUD: "A$",
+    JPY: "¥",
+  };
+
   return (
     <div className="w-full space-y-6">
       {/* Header & Primary CTA */}
@@ -146,12 +173,12 @@ export default function SubscriptionsView({
       {/* Summary Cards Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="ui-card p-4">
-          <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Monthly Commitment</span>
+          <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Monthly Commitment ({userCurrency})</span>
           <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalMonthly || 0, userCurrency)}</h3>
         </div>
 
         <div className="ui-card p-4">
-          <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Annual Commitment</span>
+          <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Annual Commitment ({userCurrency})</span>
           <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalYearly || 0, userCurrency)}</h3>
         </div>
 
@@ -167,6 +194,7 @@ export default function SubscriptionsView({
           const qty = sub.quantity || 1;
           const totalLineAmount = sub.amount * qty;
           const isPaused = sub.status === "paused";
+          const subCurrency = sub.currency || sub.accountId?.currency || userCurrency;
           const daysLeft = Math.ceil(
             (new Date(sub.nextBillingDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
           );
@@ -202,10 +230,10 @@ export default function SubscriptionsView({
                 </div>
 
                 <div className="text-right">
-                  <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(totalLineAmount, userCurrency)}</span>
+                  <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(totalLineAmount, subCurrency)}</span>
                   {qty > 1 && (
                     <span className="text-[10px] text-zinc-500 block font-mono">
-                      ({formatCurrency(sub.amount, userCurrency)} ea)
+                      ({formatCurrency(sub.amount, subCurrency)} ea)
                     </span>
                   )}
                 </div>
@@ -297,21 +325,40 @@ export default function SubscriptionsView({
             {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs">{error}</div>}
 
             <form onSubmit={handleSaveSubscription} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Service Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Netflix, Cursor, Claude, Spotify"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 text-xs"
-                />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Service Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Netflix, Cursor, Claude, Spotify"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full ui-input px-3 py-1.5 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Currency</label>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer font-mono font-medium"
+                  >
+                    {currencies.map((c) => (
+                      <option key={c} value={c}>
+                        {c} ({currencySymbolMap[c]})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Amount ($)</label>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">
+                    Amount ({currencySymbolMap[currency] || "$"})
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -319,7 +366,7 @@ export default function SubscriptionsView({
                     placeholder="20.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs"
+                    className="w-full ui-input px-3 py-1.5 text-xs font-mono font-bold"
                   />
                 </div>
 
@@ -371,7 +418,7 @@ export default function SubscriptionsView({
                   >
                     {accounts.map((acc) => (
                       <option key={acc._id} value={acc._id}>
-                        {acc.name}
+                        {acc.name} ({formatCurrency(acc.balance, acc.currency || "USD")})
                       </option>
                     ))}
                   </select>
@@ -413,7 +460,7 @@ export default function SubscriptionsView({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold"
+                  className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold cursor-pointer"
                 >
                   {loading ? "Saving..." : editingSub ? "Update Subscription" : "Add Subscription"}
                 </button>

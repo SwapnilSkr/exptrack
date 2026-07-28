@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import Subscription from "@/models/Subscription";
+import Account from "@/models/Account";
+import { convertCurrency } from "@/lib/currency";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,10 +15,10 @@ export async function GET(req: NextRequest) {
     await connectDB();
 
     const subscriptions = await Subscription.find({ userId: auth.userId })
-      .populate("accountId", "name type color icon")
+      .populate("accountId", "name type color icon currency")
       .sort({ nextBillingDate: 1 });
 
-    // Calculate totals considering quantity
+    // Calculate totals considering quantity and currency conversions
     let monthlyTotal = 0;
     let yearlyTotal = 0;
 
@@ -62,16 +64,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, amount, quantity, billingCycle, category, accountId, nextBillingDate, notes, autoRenew } = body;
+    const { name, amount, quantity, currency, billingCycle, category, accountId, nextBillingDate, notes, autoRenew } = body;
 
     if (!name || amount === undefined || !accountId) {
       return NextResponse.json({ error: "Missing required subscription fields" }, { status: 400 });
     }
 
+    await connectDB();
+
+    const account = await Account.findById(accountId);
+    const resolvedCurrency = currency || (account && account.currency ? account.currency : "USD");
     const cycle = billingCycle || "monthly";
     const qty = Number(quantity) > 0 ? Number(quantity) : 1;
 
-    // Calculate default next billing date if not provided
     let computedNextDate: Date;
     if (nextBillingDate) {
       computedNextDate = new Date(nextBillingDate);
@@ -85,18 +90,16 @@ export async function POST(req: NextRequest) {
       } else if (cycle === "yearly") {
         computedNextDate.setFullYear(now.getFullYear() + 1);
       } else {
-        // default monthly
         computedNextDate.setMonth(now.getMonth() + 1);
       }
     }
-
-    await connectDB();
 
     const sub = await Subscription.create({
       userId: auth.userId,
       name,
       amount: Number(amount),
       quantity: qty,
+      currency: resolvedCurrency,
       billingCycle: cycle,
       category: category || "Subscriptions",
       accountId,
