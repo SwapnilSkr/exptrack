@@ -20,7 +20,8 @@ export async function GET() {
     return NextResponse.json({
       authenticated: true,
       user: {
-        id: user._id,
+        _id: user._id.toString(),
+        id: user._id.toString(),
         username: user.username,
         name: user.name,
         currency: user.currency,

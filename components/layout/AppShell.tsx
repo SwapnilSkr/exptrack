@@ -61,7 +61,7 @@ export default function AppShell({ children }: AppShellProps) {
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [editTxData, setEditTxData] = useState<any>(null);
 
-  const userId = user?._id;
+  const userId = user?._id || user?.id;
 
   const checkAuth = useCallback(async () => {
     try {
@@ -80,7 +80,10 @@ export default function AppShell({ children }: AppShellProps) {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setDataLoading(false);
+      return;
+    }
     setDataLoading(true);
 
     try {
