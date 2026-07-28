@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Repeat, Plus, Zap, Trash2 } from "lucide-react";
+import { Repeat, Plus, Zap, Trash2, Edit2, PauseCircle, PlayCircle } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -13,6 +13,7 @@ interface SubscriptionsViewProps {
   onDeleteSubscription: (id: string) => void;
   onRefresh: () => void;
   onSeedData?: () => void;
+  userCurrency?: string;
 }
 
 export default function SubscriptionsView({
@@ -23,8 +24,11 @@ export default function SubscriptionsView({
   onDeleteSubscription,
   onRefresh,
   onSeedData,
+  userCurrency = "USD",
 }: SubscriptionsViewProps) {
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingSub, setEditingSub] = useState<any>(null);
+
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -32,10 +36,41 @@ export default function SubscriptionsView({
   const [category, setCategory] = useState("Subscriptions");
   const [accountId, setAccountId] = useState(accounts.length > 0 ? accounts[0]._id : "");
   const [nextBillingDate, setNextBillingDate] = useState("");
+  const [status, setStatus] = useState("active");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleAddSubscription = async (e: React.FormEvent) => {
+  const handleOpenAdd = () => {
+    setEditingSub(null);
+    setName("");
+    setAmount("");
+    setQuantity("1");
+    setBillingCycle("monthly");
+    setCategory("Subscriptions");
+    setAccountId(accounts.length > 0 ? accounts[0]._id : "");
+    setNextBillingDate("");
+    setStatus("active");
+    setError("");
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (sub: any) => {
+    setEditingSub(sub);
+    setName(sub.name);
+    setAmount(sub.amount.toString());
+    setQuantity((sub.quantity || 1).toString());
+    setBillingCycle(sub.billingCycle || "monthly");
+    setCategory(sub.category || "Subscriptions");
+    setAccountId(sub.accountId?._id || sub.accountId || "");
+    setNextBillingDate(
+      sub.nextBillingDate ? new Date(sub.nextBillingDate).toISOString().split("T")[0] : ""
+    );
+    setStatus(sub.status || "active");
+    setError("");
+    setShowModal(true);
+  };
+
+  const handleSaveSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !amount || !accountId) {
       setError("Please fill in service name, amount, and payment account.");
@@ -46,8 +81,11 @@ export default function SubscriptionsView({
     setError("");
 
     try {
-      const res = await fetch("/api/subscriptions", {
-        method: "POST",
+      const url = editingSub ? `/api/subscriptions/${editingSub._id}` : "/api/subscriptions";
+      const method = editingSub ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
@@ -56,23 +94,34 @@ export default function SubscriptionsView({
           billingCycle,
           category,
           accountId,
+          status,
           nextBillingDate: nextBillingDate || undefined,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to add subscription");
+      if (!res.ok) throw new Error(data.error || "Failed to save subscription");
 
-      setShowAddModal(false);
-      setName("");
-      setAmount("");
-      setQuantity("1");
-      setNextBillingDate("");
+      setShowModal(false);
       onRefresh();
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTogglePauseStatus = async (sub: any) => {
+    const newStatus = sub.status === "active" ? "paused" : "active";
+    try {
+      const res = await fetch(`/api/subscriptions/${sub._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) onRefresh();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -86,7 +135,7 @@ export default function SubscriptionsView({
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={handleOpenAdd}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -98,12 +147,12 @@ export default function SubscriptionsView({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="ui-card p-4">
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Monthly Commitment</span>
-          <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalMonthly || 0)}</h3>
+          <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalMonthly || 0, userCurrency)}</h3>
         </div>
 
         <div className="ui-card p-4">
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Annual Commitment</span>
-          <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalYearly || 0)}</h3>
+          <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalYearly || 0, userCurrency)}</h3>
         </div>
 
         <div className="ui-card p-4">
@@ -117,12 +166,18 @@ export default function SubscriptionsView({
         {subscriptions.map((sub) => {
           const qty = sub.quantity || 1;
           const totalLineAmount = sub.amount * qty;
+          const isPaused = sub.status === "paused";
           const daysLeft = Math.ceil(
             (new Date(sub.nextBillingDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
           );
 
           return (
-            <div key={sub._id} className="ui-card p-4 flex flex-col justify-between space-y-3 ui-card-interactive">
+            <div
+              key={sub._id}
+              className={`ui-card p-4 flex flex-col justify-between space-y-3 ui-card-interactive ${
+                isPaused ? "opacity-60" : ""
+              }`}
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-1.5">
@@ -130,6 +185,11 @@ export default function SubscriptionsView({
                     {qty > 1 && (
                       <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-semibold font-mono border border-zinc-700">
                         x{qty}
+                      </span>
+                    )}
+                    {isPaused && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase font-semibold">
+                        Paused
                       </span>
                     )}
                   </div>
@@ -142,10 +202,10 @@ export default function SubscriptionsView({
                 </div>
 
                 <div className="text-right">
-                  <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(totalLineAmount)}</span>
+                  <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(totalLineAmount, userCurrency)}</span>
                   {qty > 1 && (
                     <span className="text-[10px] text-zinc-500 block font-mono">
-                      ({formatCurrency(sub.amount)} ea)
+                      ({formatCurrency(sub.amount, userCurrency)} ea)
                     </span>
                   )}
                 </div>
@@ -175,18 +235,36 @@ export default function SubscriptionsView({
                   {daysLeft <= 0 ? "Due Today" : `${daysLeft} Days Left`}
                 </span>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleTogglePauseStatus(sub)}
+                    className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
+                    title={isPaused ? "Resume Subscription" : "Pause Subscription"}
+                  >
+                    {isPaused ? <PlayCircle className="w-3.5 h-3.5 text-emerald-400" /> : <PauseCircle className="w-3.5 h-3.5" />}
+                  </button>
+
                   <button
                     onClick={() => onLogSubscription(sub._id)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium cursor-pointer transition-colors"
+                    className="flex items-center gap-1 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium cursor-pointer transition-colors"
+                    title="Log Expense Now"
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    Log Expense
+                    Log
+                  </button>
+
+                  <button
+                    onClick={() => handleOpenEdit(sub)}
+                    className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
+                    title="Edit Subscription"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
                   </button>
 
                   <button
                     onClick={() => onDeleteSubscription(sub._id)}
                     className="p-1 rounded text-zinc-500 hover:text-rose-400 cursor-pointer"
+                    title="Delete Subscription"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -203,20 +281,22 @@ export default function SubscriptionsView({
           title="No Active Subscriptions Tracked"
           description="Keep track of your monthly software services, streaming memberships, and recurring billing renewals."
           actionLabel="+ Add Subscription"
-          onAction={() => setShowAddModal(true)}
+          onAction={handleOpenAdd}
           onSecondaryAction={onSeedData}
         />
       )}
 
-      {/* Add Subscription Modal */}
-      {showAddModal && (
+      {/* Add / Edit Subscription Modal */}
+      {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
           <div className="w-full max-w-md ui-modal rounded-xl p-5 border border-zinc-800 space-y-3">
-            <h3 className="text-sm font-semibold text-white">Add Subscription</h3>
+            <h3 className="text-sm font-semibold text-white">
+              {editingSub ? "Edit Subscription" : "Add Subscription"}
+            </h3>
 
             {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs">{error}</div>}
 
-            <form onSubmit={handleAddSubscription} className="space-y-3">
+            <form onSubmit={handleSaveSubscription} className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-zinc-300 mb-1">Service Name</label>
                 <input
@@ -298,23 +378,34 @@ export default function SubscriptionsView({
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-zinc-300">Next Billing Date</label>
-                  <span className="text-[10px] text-zinc-500">(Optional - auto-calculates if blank)</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+                  >
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                  </select>
                 </div>
-                <input
-                  type="date"
-                  value={nextBillingDate}
-                  onChange={(e) => setNextBillingDate(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                />
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Next Billing Date</label>
+                  <input
+                    type="date"
+                    value={nextBillingDate}
+                    onChange={(e) => setNextBillingDate(e.target.value)}
+                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => setShowModal(false)}
                   className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
                 >
                   Cancel
@@ -324,7 +415,7 @@ export default function SubscriptionsView({
                   disabled={loading}
                   className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold"
                 >
-                  {loading ? "Adding..." : "Add Subscription"}
+                  {loading ? "Saving..." : editingSub ? "Update Subscription" : "Add Subscription"}
                 </button>
               </div>
             </form>

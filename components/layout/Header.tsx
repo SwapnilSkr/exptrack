@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  Globe,
   LayoutDashboard,
   Receipt,
   Repeat,
@@ -21,12 +22,13 @@ import {
 import { formatCurrency } from "@/lib/utils";
 
 interface HeaderProps {
-  user: { name: string; username: string } | null;
+  user: { name: string; username: string; currency?: string } | null;
   netWorth: number;
   onOpenAddModal: () => void;
   onSeedData: () => void;
   onClearData: () => void;
   onLogout: () => void;
+  onCurrencyChange?: (currency: string) => void;
 }
 
 export default function Header({
@@ -36,10 +38,15 @@ export default function Header({
   onSeedData,
   onClearData,
   onLogout,
+  onCurrencyChange,
 }: HeaderProps) {
   const pathname = usePathname();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const selectedCurrency = user?.currency || "USD";
+  const currencies = ["USD", "EUR", "GBP", "INR", "CAD", "AUD", "JPY"];
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -85,13 +92,52 @@ export default function Header({
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Net Worth Ticker (Desktop / Tablet) */}
-            <div className="hidden lg:flex items-center gap-1 text-xs">
-              <span className="text-zinc-500 text-[11px]">Net Worth</span>
-              <span className="font-semibold text-zinc-100 font-mono text-xs">{formatCurrency(netWorth)}</span>
+            {/* Global Currency Selector Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowCurrencyMenu(!showCurrencyMenu);
+                  setShowUserMenu(false);
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-900 text-zinc-300 text-xs font-mono font-medium border border-zinc-800 cursor-pointer"
+                title="Change Primary Currency"
+              >
+                <Globe className="w-3 h-3 text-zinc-400" />
+                <span>{selectedCurrency}</span>
+                <ChevronDown className="w-3 h-3 text-zinc-500" />
+              </button>
+
+              {showCurrencyMenu && (
+                <div className="absolute right-0 mt-1.5 w-32 ui-modal rounded-md border border-zinc-800 py-1 z-50 shadow-xl">
+                  <div className="px-3 py-1 border-b border-zinc-800 text-[10px] uppercase font-semibold text-zinc-400">
+                    Select Currency
+                  </div>
+                  {currencies.map((curr) => (
+                    <button
+                      key={curr}
+                      onClick={() => {
+                        setShowCurrencyMenu(false);
+                        if (onCurrencyChange) onCurrencyChange(curr);
+                      }}
+                      className={`w-full px-3 py-1.5 text-left text-xs font-mono flex items-center justify-between cursor-pointer ${
+                        selectedCurrency === curr ? "bg-zinc-800 text-white font-bold" : "text-zinc-300 hover:bg-zinc-800/60"
+                      }`}
+                    >
+                      <span>{curr}</span>
+                      {selectedCurrency === curr && <span className="text-emerald-400 text-xs">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Quick Add Button - Full on Desktop, Icon-only on Mobile */}
+            {/* Net Worth Ticker */}
+            <div className="hidden lg:flex items-center gap-1 text-xs">
+              <span className="text-zinc-500 text-[11px]">Net Worth</span>
+              <span className="font-semibold text-zinc-100 font-mono text-xs">{formatCurrency(netWorth, selectedCurrency)}</span>
+            </div>
+
+            {/* Quick Add Button */}
             <button
               onClick={onOpenAddModal}
               className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer shrink-0"
@@ -104,7 +150,10 @@ export default function Header({
             {/* User Profile Avatar Dropdown */}
             <div className="relative shrink-0">
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                onClick={() => {
+                  setShowUserMenu(!showUserMenu);
+                  setShowCurrencyMenu(false);
+                }}
                 className="flex items-center gap-1 p-1 rounded hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
                 title={user?.name || "Account Settings"}
               >
@@ -192,7 +241,7 @@ export default function Header({
 
             <div className="pt-3 border-t border-zinc-800 flex items-center justify-between px-3 text-xs text-zinc-400">
               <span>Net Worth</span>
-              <span className="font-semibold text-zinc-100 font-mono">{formatCurrency(netWorth)}</span>
+              <span className="font-semibold text-zinc-100 font-mono">{formatCurrency(netWorth, selectedCurrency)}</span>
             </div>
           </div>
         )}

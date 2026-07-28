@@ -14,6 +14,7 @@ export default function SubscriptionsPage() {
         onDeleteSubscription,
         fetchData,
         onSeedData,
+        userCurrency,
       }) => (
         <SubscriptionsView
           subscriptions={subscriptions}
@@ -23,6 +24,7 @@ export default function SubscriptionsPage() {
           onDeleteSubscription={onDeleteSubscription}
           onRefresh={fetchData}
           onSeedData={onSeedData}
+          userCurrency={userCurrency}
         />
       )}
     </AppShell>

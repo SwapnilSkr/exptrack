@@ -30,6 +30,7 @@ interface AppShellProps {
     onSeedData: () => void;
     onClearData: () => void;
     fetchData: () => void;
+    userCurrency: string;
   }) => ReactNode;
 }
 
@@ -68,7 +69,7 @@ export default function AppShell({ children }: AppShellProps) {
       }
     } catch {
       setUser(null);
-    } finally {
+    } fontally: {
       setAuthChecked(true);
     }
   }, []);
@@ -121,6 +122,22 @@ export default function AppShell({ children }: AppShellProps) {
       fetchData();
     }
   }, [user, fetchData]);
+
+  const handleCurrencyChange = async (newCurrency: string) => {
+    try {
+      const res = await fetch("/api/user/currency", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currency: newCurrency }),
+      });
+      if (res.ok) {
+        setUser((prev: any) => ({ ...prev, currency: newCurrency }));
+        fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleOpenAddModal = (tx?: any) => {
     setEditTxData(tx || null);
@@ -198,7 +215,7 @@ export default function AppShell({ children }: AppShellProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#09090b] text-white">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-zinc-400 font-medium">Securing Session...</p>
         </div>
       </div>
@@ -209,8 +226,10 @@ export default function AppShell({ children }: AppShellProps) {
     return <AuthModal onSuccess={checkAuth} />;
   }
 
+  const userCurrency = user.currency || "USD";
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#09090b] text-zinc-100 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#09090b] text-zinc-100 selection:bg-zinc-800 selection:text-white">
       {/* Header */}
       <Header
         user={user}
@@ -219,10 +238,11 @@ export default function AppShell({ children }: AppShellProps) {
         onSeedData={handleSeedData}
         onClearData={handleClearData}
         onLogout={handleLogout}
+        onCurrencyChange={handleCurrencyChange}
       />
 
       {/* Page Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {children({
           user,
           analytics,
@@ -247,6 +267,7 @@ export default function AppShell({ children }: AppShellProps) {
           onSeedData: handleSeedData,
           onClearData: handleClearData,
           fetchData,
+          userCurrency,
         })}
       </main>
 
