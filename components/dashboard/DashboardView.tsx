@@ -62,7 +62,7 @@ export default function DashboardView({
   return (
     <div className="space-y-6">
       {/* Metric Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {/* Net Worth */}
         <div className="ui-card p-4 flex flex-col justify-between">
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Total Net Worth</span>
