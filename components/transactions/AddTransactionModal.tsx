@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import Dialog from "@/components/ui/Dialog";
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -22,7 +21,7 @@ export default function AddTransactionModal({
   const [type, setType] = useState<"expense" | "income" | "transfer">("expense");
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("INR");
   const [category, setCategory] = useState("General");
   const [accountId, setAccountId] = useState("");
   const [toAccountId, setToAccountId] = useState("");
@@ -54,7 +53,7 @@ export default function AddTransactionModal({
       setType(editTransaction.type || "expense");
       setTitle(editTransaction.title || "");
       setAmount(editTransaction.amount ? editTransaction.amount.toString() : "");
-      setCurrency(editTransaction.currency || "USD");
+      setCurrency(editTransaction.currency || "INR");
       setCategory(editTransaction.category || "General");
       setAccountId(editTransaction.accountId?._id || editTransaction.accountId || "");
       setToAccountId(editTransaction.toAccountId?._id || editTransaction.toAccountId || "");
@@ -73,18 +72,18 @@ export default function AddTransactionModal({
 
   // When selected account changes, auto-sync input currency to matching account currency
   useEffect(() => {
-    if (accountId && accounts.length > 0) {
+    if (isOpen && accountId && accounts.length > 0) {
       const selectedAcc = accounts.find((a) => a._id === accountId);
       if (selectedAcc && selectedAcc.currency) {
         setCurrency(selectedAcc.currency);
       }
-    } else if (!accountId && accounts.length > 0) {
+    } else if (isOpen && !accountId && accounts.length > 0) {
       setAccountId(accounts[0]._id);
       if (accounts[0].currency) {
         setCurrency(accounts[0].currency);
       }
     }
-  }, [accountId, accounts]);
+  }, [isOpen, accountId, accounts]);
 
   const resetForm = () => {
     setType("expense");
@@ -92,7 +91,7 @@ export default function AddTransactionModal({
     setAmount("");
     const defaultAcc = accounts.length > 0 ? accounts[0] : null;
     setAccountId(defaultAcc ? defaultAcc._id : "");
-    setCurrency(defaultAcc && defaultAcc.currency ? defaultAcc.currency : "USD");
+    setCurrency(defaultAcc && defaultAcc.currency ? defaultAcc.currency : "INR");
     setToAccountId(accounts.length > 1 ? accounts[1]._id : "");
     setCategory("General");
     setDate(new Date().toISOString().split("T")[0]);
@@ -101,8 +100,6 @@ export default function AddTransactionModal({
     setNotes("");
     setError("");
   };
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,20 +160,16 @@ export default function AddTransactionModal({
     JPY: "¥",
   };
 
-  const currentSymbol = currencySymbolMap[currency] || "$";
+  const currentSymbol = currencySymbolMap[currency] || "₹";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 overflow-y-auto">
-      <div className="w-full max-w-md ui-modal rounded-xl p-5 border border-zinc-800 space-y-4 my-auto">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-white">
-            {editTransaction ? "Edit Transaction" : "Add Transaction"}
-          </h3>
-          <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white cursor-pointer">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editTransaction ? "Edit Transaction" : "Add Transaction"}
+      description="Record income, expense, or transfer details."
+    >
+      <div className="space-y-3">
         {/* Transaction Type Selector Tabs */}
         <div className="flex bg-zinc-900 p-1 rounded-lg border border-zinc-800">
           {(["expense", "income", "transfer"] as const).map((t) => (
@@ -278,7 +271,7 @@ export default function AddTransactionModal({
               >
                 {accounts.map((acc) => (
                   <option key={acc._id} value={acc._id}>
-                    {acc.name} ({formatCurrency(acc.balance, acc.currency || "USD")})
+                    {acc.name}
                   </option>
                 ))}
               </select>
@@ -295,7 +288,7 @@ export default function AddTransactionModal({
               >
                 {accounts.map((acc) => (
                   <option key={acc._id} value={acc._id}>
-                    {acc.name} ({formatCurrency(acc.balance, acc.currency || "USD")})
+                    {acc.name}
                   </option>
                 ))}
               </select>
@@ -370,6 +363,6 @@ export default function AddTransactionModal({
           </div>
         </form>
       </div>
-    </div>
+    </Dialog>
   );
 }

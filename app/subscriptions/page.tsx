@@ -12,6 +12,7 @@ export default function SubscriptionsPage() {
         subMetrics,
         accounts,
         onLogSubscription,
+        onDelogSubscription,
         onDeleteSubscription,
         fetchData,
         onSeedData,
@@ -28,6 +29,7 @@ export default function SubscriptionsPage() {
             metrics={subMetrics}
             accounts={accounts}
             onLogSubscription={onLogSubscription}
+            onDelogSubscription={onDelogSubscription}
             onDeleteSubscription={onDeleteSubscription}
             onRefresh={fetchData}
             onSeedData={onSeedData}

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Plus, AlertTriangle, CheckCircle2, Target, Edit2, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
+import Dialog from "@/components/ui/Dialog";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface BudgetsViewProps {
   budgets: any[];
@@ -16,10 +18,14 @@ export default function BudgetsView({
   budgets,
   onRefresh,
   onSeedData,
-  userCurrency = "USD",
+  userCurrency = "INR",
 }: BudgetsViewProps) {
   const [showModal, setShowModal] = useState(false);
   const [editingBudget, setEditingBudget] = useState<any>(null);
+
+  // Confirm dialog state for budget deletion
+  const [deleteBudgetId, setDeleteBudgetId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [category, setCategory] = useState("Food");
   const [monthlyLimit, setMonthlyLimit] = useState("");
@@ -89,13 +95,19 @@ export default function BudgetsView({
     }
   };
 
-  const handleDeleteBudget = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this budget limit?")) return;
+  const confirmExecuteDelete = async () => {
+    if (!deleteBudgetId) return;
+    setActionLoading(true);
     try {
-      const res = await fetch(`/api/budgets?id=${id}`, { method: "DELETE" });
-      if (res.ok) onRefresh();
+      const res = await fetch(`/api/budgets?id=${deleteBudgetId}`, { method: "DELETE" });
+      if (res.ok) {
+        setDeleteBudgetId(null);
+        onRefresh();
+      }
     } catch (err) {
       console.error(err);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -168,7 +180,7 @@ export default function BudgetsView({
                   </button>
 
                   <button
-                    onClick={() => handleDeleteBudget(b._id)}
+                    onClick={() => setDeleteBudgetId(b._id)}
                     className="p-1 text-zinc-500 hover:text-rose-400 cursor-pointer"
                     title="Delete Budget"
                   >
@@ -212,82 +224,91 @@ export default function BudgetsView({
         />
       )}
 
-      {/* Add / Edit Budget Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-          <div className="w-full max-w-sm ui-modal rounded-xl p-5 border border-zinc-800 space-y-3">
-            <h3 className="text-sm font-semibold text-white">
-              {editingBudget ? "Edit Category Budget Limit" : "Set Category Spending Limit"}
-            </h3>
+      {/* Add / Edit Budget Modal using Shadcn Dialog */}
+      <Dialog
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingBudget ? "Edit Category Budget Limit" : "Set Category Spending Limit"}
+        description="Set a monthly cap for category expenditures."
+      >
+        {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs mb-3">{error}</div>}
 
-            {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs">{error}</div>}
-
-            <form onSubmit={handleSaveBudget} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Currency</label>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer font-mono font-medium"
-                  >
-                    {currencies.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Monthly Limit</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="500.00"
-                    value={monthlyLimit}
-                    onChange={(e) => setMonthlyLimit(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold cursor-pointer"
-                >
-                  {loading ? "Saving..." : editingBudget ? "Update Limit" : "Save Limit"}
-                </button>
-              </div>
-            </form>
+        <form onSubmit={handleSaveBudget} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Currency</label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer font-mono font-medium"
+              >
+                {currencies.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Monthly Limit</label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                placeholder="500.00"
+                value={monthlyLimit}
+                onChange={(e) => setMonthlyLimit(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs font-mono font-bold"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold cursor-pointer"
+            >
+              {loading ? "Saving..." : editingBudget ? "Update Limit" : "Save Limit"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Delete Budget Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteBudgetId)}
+        onClose={() => setDeleteBudgetId(null)}
+        onConfirm={confirmExecuteDelete}
+        title="Delete Category Budget?"
+        description="Are you sure you want to remove this monthly category budget limit?"
+        confirmLabel="Delete Limit"
+        variant="danger"
+        isLoading={actionLoading}
+      />
     </div>
   );
 }

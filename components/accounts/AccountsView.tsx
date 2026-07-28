@@ -4,6 +4,8 @@ import { useState } from "react";
 import { CreditCard, Landmark, PiggyBank, Wallet, Plus, Trash2, Edit2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
+import Dialog from "@/components/ui/Dialog";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface AccountsViewProps {
   accounts: any[];
@@ -19,17 +21,21 @@ export default function AccountsView({
   totalBalance,
   onRefresh,
   onSeedData,
-  userCurrency = "USD",
+  userCurrency = "INR",
   onCurrencyChange,
 }: AccountsViewProps) {
   const [showModal, setShowModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
 
+  // Confirm dialog state for wallet deletion
+  const [deleteAccId, setDeleteAccId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const [name, setName] = useState("");
   const [type, setType] = useState("checking");
   const [balance, setBalance] = useState("");
   const [color, setColor] = useState("#3b82f6");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("INR");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -96,13 +102,19 @@ export default function AccountsView({
     }
   };
 
-  const handleDeleteAccount = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this account?")) return;
+  const confirmExecuteDelete = async () => {
+    if (!deleteAccId) return;
+    setActionLoading(true);
     try {
-      const res = await fetch(`/api/accounts/${id}`, { method: "DELETE" });
-      if (res.ok) onRefresh();
+      const res = await fetch(`/api/accounts/${deleteAccId}`, { method: "DELETE" });
+      if (res.ok) {
+        setDeleteAccId(null);
+        onRefresh();
+      }
     } catch (err) {
       console.error(err);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -174,7 +186,7 @@ export default function AccountsView({
                   </button>
 
                   <button
-                    onClick={() => handleDeleteAccount(acc._id)}
+                    onClick={() => setDeleteAccId(acc._id)}
                     className="p-1 text-zinc-500 hover:text-rose-400 cursor-pointer"
                     title="Delete Wallet"
                   >
@@ -205,94 +217,103 @@ export default function AccountsView({
         />
       )}
 
-      {/* Add / Edit Account Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-          <div className="w-full max-w-sm ui-modal rounded-xl p-5 border border-zinc-800 space-y-3">
-            <h3 className="text-sm font-semibold text-white">
-              {editingAccount ? "Edit Wallet & Balance" : "Add New Wallet / Account"}
-            </h3>
+      {/* Add / Edit Account Modal using Shadcn Dialog */}
+      <Dialog
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingAccount ? "Edit Wallet & Balance" : "Add New Wallet / Account"}
+        description="Configure account name, account type, currency, and current balance."
+      >
+        {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs mb-3">{error}</div>}
 
-            {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs">{error}</div>}
-
-            <form onSubmit={handleSaveAccount} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Account Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Chase Checking, Amex Gold"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Account Type</label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                  >
-                    <option value="checking">Checking</option>
-                    <option value="savings">Savings</option>
-                    <option value="credit">Credit Card</option>
-                    <option value="cash">Cash Wallet</option>
-                    <option value="investment">Investment</option>
-                    <option value="crypto">Crypto</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Currency</label>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                  >
-                    {currencies.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Current Balance</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 text-xs"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold"
-                >
-                  {loading ? "Saving..." : editingAccount ? "Update Wallet" : "Add Wallet"}
-                </button>
-              </div>
-            </form>
+        <form onSubmit={handleSaveAccount} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Account Name</label>
+            <input
+              type="text"
+              required
+              placeholder="Chase Checking, HDFC Savings, Cash Wallet"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full ui-input px-3 py-1.5 text-xs"
+            />
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Account Type</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+              >
+                <option value="checking">Checking</option>
+                <option value="savings">Savings</option>
+                <option value="credit">Credit Card</option>
+                <option value="cash">Cash Wallet</option>
+                <option value="investment">Investment</option>
+                <option value="crypto">Crypto</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Currency</label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+              >
+                {currencies.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Current Balance</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={balance}
+              onChange={(e) => setBalance(e.target.value)}
+              className="w-full ui-input px-3 py-1.5 text-xs font-mono font-bold"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold cursor-pointer"
+            >
+              {loading ? "Saving..." : editingAccount ? "Update Wallet" : "Add Wallet"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Delete Wallet Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteAccId)}
+        onClose={() => setDeleteAccId(null)}
+        onConfirm={confirmExecuteDelete}
+        title="Delete Wallet Account?"
+        description="Are you sure you want to delete this wallet account? Past transaction records associated with this wallet will remain in your history."
+        confirmLabel="Delete Wallet"
+        variant="danger"
+        isLoading={actionLoading}
+      />
     </div>
   );
 }

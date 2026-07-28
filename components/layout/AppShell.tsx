@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, ReactNode } from "react";
 import AuthModal from "@/components/auth/AuthModal";
 import Header from "@/components/layout/Header";
 import AddTransactionModal from "@/components/transactions/AddTransactionModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface AppShellProps {
   children: (props: {
@@ -26,6 +27,7 @@ interface AppShellProps {
     onOpenAddModal: (tx?: any) => void;
     onDeleteTransaction: (id: string) => void;
     onLogSubscription: (subId: string) => void;
+    onDelogSubscription: (subId: string) => void;
     onDeleteSubscription: (id: string) => void;
     onSeedData: () => void;
     onClearData: () => void;
@@ -61,6 +63,10 @@ export default function AppShell({ children }: AppShellProps) {
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [editTxData, setEditTxData] = useState<any>(null);
 
+  // Confirm dialog control for Purge Data
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const userId = user?._id || user?.id;
 
   const checkAuth = useCallback(async () => {
@@ -87,7 +93,6 @@ export default function AppShell({ children }: AppShellProps) {
     setDataLoading(true);
 
     try {
-      // Single unified bootstrap request for ultra-low latency & zero waterfall fetches
       const res = await fetch(`/api/bootstrap?timeframe=${timeframe}`);
       if (res.ok) {
         const data = await res.json();
@@ -138,7 +143,6 @@ export default function AppShell({ children }: AppShellProps) {
   };
 
   const handleDeleteTransaction = async (id: string) => {
-    if (!confirm("Delete this transaction entry?")) return;
     try {
       const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
@@ -152,7 +156,6 @@ export default function AppShell({ children }: AppShellProps) {
       const res = await fetch(`/api/subscriptions/${subId}/log`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message);
         fetchData();
       } else {
         alert(data.error || "Failed to log subscription expense");
@@ -162,8 +165,21 @@ export default function AppShell({ children }: AppShellProps) {
     }
   };
 
+  const handleDelogSubscription = async (subId: string) => {
+    try {
+      const res = await fetch(`/api/subscriptions/${subId}/delog`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        fetchData();
+      } else {
+        alert(data.error || "Failed to delog subscription expense");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleDeleteSubscription = async (id: string) => {
-    if (!confirm("Delete this recurring subscription?")) return;
     try {
       const res = await fetch(`/api/subscriptions?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
@@ -175,9 +191,7 @@ export default function AppShell({ children }: AppShellProps) {
   const handleSeedData = async () => {
     try {
       const res = await fetch("/api/seed", { method: "POST" });
-      const data = await res.json();
       if (res.ok) {
-        alert(data.message);
         fetchData();
       }
     } catch (err) {
@@ -185,17 +199,18 @@ export default function AppShell({ children }: AppShellProps) {
     }
   };
 
-  const handleClearData = async () => {
-    if (!confirm("Do you want to purge all sample & test data for your account?")) return;
+  const executeClearData = async () => {
+    setActionLoading(true);
     try {
       const res = await fetch("/api/clear-sample?mode=all", { method: "POST" });
-      const data = await res.json();
       if (res.ok) {
-        alert(data.message);
+        setClearConfirmOpen(false);
         fetchData();
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -229,7 +244,7 @@ export default function AppShell({ children }: AppShellProps) {
         netWorth={analytics?.metrics?.netWorth || totalAccountBalance}
         onOpenAddModal={() => handleOpenAddModal()}
         onSeedData={handleSeedData}
-        onClearData={handleClearData}
+        onClearData={() => setClearConfirmOpen(true)}
         onLogout={handleLogout}
         onCurrencyChange={handleCurrencyChange}
       />
@@ -256,9 +271,10 @@ export default function AppShell({ children }: AppShellProps) {
           onOpenAddModal: handleOpenAddModal,
           onDeleteTransaction: handleDeleteTransaction,
           onLogSubscription: handleLogSubscription,
+          onDelogSubscription: handleDelogSubscription,
           onDeleteSubscription: handleDeleteSubscription,
           onSeedData: handleSeedData,
-          onClearData: handleClearData,
+          onClearData: () => setClearConfirmOpen(true),
           fetchData,
           userCurrency,
           handleCurrencyChange,
@@ -273,6 +289,19 @@ export default function AppShell({ children }: AppShellProps) {
         onSuccess={fetchData}
         editTransaction={editTxData}
         accounts={accounts}
+      />
+
+      {/* Clear All Data Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={clearConfirmOpen}
+        onClose={() => setClearConfirmOpen(false)}
+        onConfirm={executeClearData}
+        title="Purge All Account Data?"
+        description="This action will permanently delete all your wallets, transactions, subscriptions, and budget records. This cannot be undone."
+        confirmLabel="Purge All Data"
+        cancelLabel="Keep Data"
+        variant="danger"
+        isLoading={actionLoading}
       />
     </div>
   );

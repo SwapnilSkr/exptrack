@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Repeat, Plus, Zap, Trash2, Edit2, PauseCircle, PlayCircle } from "lucide-react";
+import { Repeat, Plus, Zap, Trash2, Edit2, PauseCircle, PlayCircle, Undo2 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
+import Dialog from "@/components/ui/Dialog";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface SubscriptionsViewProps {
   subscriptions: any[];
   metrics: { totalMonthly: number; totalYearly: number; activeCount: number };
   accounts: any[];
   onLogSubscription: (id: string) => void;
+  onDelogSubscription?: (id: string) => void;
   onDeleteSubscription: (id: string) => void;
   onRefresh: () => void;
   onSeedData?: () => void;
@@ -21,13 +24,19 @@ export default function SubscriptionsView({
   metrics,
   accounts,
   onLogSubscription,
+  onDelogSubscription,
   onDeleteSubscription,
   onRefresh,
   onSeedData,
-  userCurrency = "USD",
+  userCurrency = "INR",
 }: SubscriptionsViewProps) {
   const [showModal, setShowModal] = useState(false);
   const [editingSub, setEditingSub] = useState<any>(null);
+
+  // Confirm dialogs state
+  const [deleteSubId, setDeleteSubId] = useState<string | null>(null);
+  const [delogSubId, setDelogSubId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -142,6 +151,28 @@ export default function SubscriptionsView({
     }
   };
 
+  const confirmExecuteDelete = async () => {
+    if (!deleteSubId) return;
+    setActionLoading(true);
+    try {
+      await onDeleteSubscription(deleteSubId);
+      setDeleteSubId(null);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const confirmExecuteDelog = async () => {
+    if (!delogSubId || !onDelogSubscription) return;
+    setActionLoading(true);
+    try {
+      await onDelogSubscription(delogSubId);
+      setDelogSubId(null);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const currencySymbolMap: Record<string, string> = {
     USD: "$",
     EUR: "€",
@@ -158,7 +189,7 @@ export default function SubscriptionsView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
         <div>
           <h1 className="text-lg font-bold text-white tracking-tight">Subscriptions & Recurring</h1>
-          <p className="text-xs text-zinc-400">Track recurring software, services, membership renewals & multi-seat counts</p>
+          <p className="text-xs text-zinc-400">Track recurring software, services, membership renewals, logging & delogging</p>
         </div>
 
         <button
@@ -281,6 +312,16 @@ export default function SubscriptionsView({
                     Log
                   </button>
 
+                  {onDelogSubscription && (
+                    <button
+                      onClick={() => setDelogSubId(sub._id)}
+                      className="flex items-center gap-1 px-1.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-amber-400 text-xs font-medium cursor-pointer transition-colors"
+                      title="Undo Log / Delog Expense"
+                    >
+                      <Undo2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleOpenEdit(sub)}
                     className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
@@ -290,7 +331,7 @@ export default function SubscriptionsView({
                   </button>
 
                   <button
-                    onClick={() => onDeleteSubscription(sub._id)}
+                    onClick={() => setDeleteSubId(sub._id)}
                     className="p-1 rounded text-zinc-500 hover:text-rose-400 cursor-pointer"
                     title="Delete Subscription"
                   >
@@ -314,161 +355,182 @@ export default function SubscriptionsView({
         />
       )}
 
-      {/* Add / Edit Subscription Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-          <div className="w-full max-w-md ui-modal rounded-xl p-5 border border-zinc-800 space-y-3">
-            <h3 className="text-sm font-semibold text-white">
-              {editingSub ? "Edit Subscription" : "Add Subscription"}
-            </h3>
+      {/* Add / Edit Subscription Modal using Shadcn Dialog */}
+      <Dialog
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingSub ? "Edit Subscription" : "Add Subscription"}
+        description="Manage service pricing, billing cycle, count, and payment account."
+      >
+        {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs mb-3">{error}</div>}
 
-            {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs">{error}</div>}
+        <form onSubmit={handleSaveSubscription} className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Service Name</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Netflix, Cursor, Claude, Spotify"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs"
+              />
+            </div>
 
-            <form onSubmit={handleSaveSubscription} className="space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Service Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Netflix, Cursor, Claude, Spotify"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Currency</label>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer font-mono font-medium"
-                  >
-                    {currencies.map((c) => (
-                      <option key={c} value={c}>
-                        {c} ({currencySymbolMap[c]})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">
-                    Amount ({currencySymbolMap[currency] || "$"})
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="20.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs font-mono font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Count (Qty)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    placeholder="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Billing Cycle</label>
-                  <select
-                    value={billingCycle}
-                    onChange={(e) => setBillingCycle(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                  >
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Category</label>
-                  <input
-                    type="text"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Payment Account</label>
-                  <select
-                    value={accountId}
-                    onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                  >
-                    {accounts.map((acc) => (
-                      <option key={acc._id} value={acc._id}>
-                        {acc.name} ({formatCurrency(acc.balance, acc.currency || "USD")})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Status</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                  >
-                    <option value="active">Active</option>
-                    <option value="paused">Paused</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1">Next Billing Date</label>
-                  <input
-                    type="date"
-                    value={nextBillingDate}
-                    onChange={(e) => setNextBillingDate(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold cursor-pointer"
-                >
-                  {loading ? "Saving..." : editingSub ? "Update Subscription" : "Add Subscription"}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Currency</label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer font-mono font-medium"
+              >
+                {currencies.map((c) => (
+                  <option key={c} value={c}>
+                    {c} ({currencySymbolMap[c]})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">
+                Amount ({currencySymbolMap[currency] || "₹"})
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                placeholder="20.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs font-mono font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Count (Qty)</label>
+              <input
+                type="number"
+                min="1"
+                required
+                placeholder="1"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Billing Cycle</label>
+              <select
+                value={billingCycle}
+                onChange={(e) => setBillingCycle(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Category</label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Payment Account</label>
+              <select
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+              >
+                {accounts.map((acc) => (
+                  <option key={acc._id} value={acc._id}>
+                    {acc.name} ({formatCurrency(acc.balance, acc.currency || "INR")})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+              >
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Next Billing Date</label>
+              <input
+                type="date"
+                value={nextBillingDate}
+                onChange={(e) => setNextBillingDate(e.target.value)}
+                className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold cursor-pointer"
+            >
+              {loading ? "Saving..." : editingSub ? "Update Subscription" : "Add Subscription"}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Delete Subscription Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteSubId)}
+        onClose={() => setDeleteSubId(null)}
+        onConfirm={confirmExecuteDelete}
+        title="Delete Recurring Subscription?"
+        description="Are you sure you want to delete this subscription from your watchlist? Your past logged transaction entries will not be deleted."
+        confirmLabel="Delete Subscription"
+        variant="danger"
+        isLoading={actionLoading}
+      />
+
+      {/* Delog Subscription Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(delogSubId)}
+        onClose={() => setDelogSubId(null)}
+        onConfirm={confirmExecuteDelog}
+        title="Undo / Delog Subscription Expense?"
+        description="This will delete the auto-logged subscription transaction entry, add the funds back to your wallet balance, and roll back the next renewal billing date by 1 cycle."
+        confirmLabel="Undo / Delog Expense"
+        variant="warning"
+        isLoading={actionLoading}
+      />
     </div>
   );
 }

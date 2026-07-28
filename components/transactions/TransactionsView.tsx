@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Search,
   Download,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface TransactionsViewProps {
   transactions: any[];
@@ -45,6 +47,10 @@ export default function TransactionsView({
   setSearchQuery,
   onSeedData,
 }: TransactionsViewProps) {
+  // Confirm dialog state for transaction deletion
+  const [deleteTxId, setDeleteTxId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const categories = [
     "Housing",
     "Food",
@@ -85,6 +91,17 @@ export default function TransactionsView({
     document.body.removeChild(link);
   };
 
+  const confirmExecuteDelete = async () => {
+    if (!deleteTxId) return;
+    setActionLoading(true);
+    try {
+      await onDeleteTransaction(deleteTxId);
+      setDeleteTxId(null);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Header & Export CTA */}
@@ -102,39 +119,41 @@ export default function TransactionsView({
             <Download className="w-3.5 h-3.5" />
             Export CSV
           </button>
+
           <button
             onClick={() => onOpenAddModal()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            Add Transaction
+            <Plus className="w-3.5 h-3.5" />
+            Add Entry
           </button>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="ui-card p-3 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Search title, tags, notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full ui-input pl-8 pr-3 py-1.5 rounded-md text-xs"
-            />
-          </div>
+      <div className="ui-card p-3 flex flex-col md:flex-row items-center justify-between gap-3">
+        {/* Search Input */}
+        <div className="relative w-full md:w-72">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Search transactions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full ui-input pl-9 pr-3 py-1.5 text-xs"
+          />
+        </div>
 
-          {/* Timeframe */}
-          <div className="flex bg-zinc-900 p-0.5 rounded-md border border-zinc-800">
+        {/* Filter Dropdowns */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Timeframe selector */}
+          <div className="flex bg-zinc-900 p-0.5 rounded border border-zinc-800">
             {["daily", "monthly", "yearly", "all"].map((tf) => (
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}
-                className={`flex-1 py-1 text-[11px] font-medium uppercase tracking-wider rounded transition-colors cursor-pointer ${
-                  timeframe === tf ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-zinc-200"
+                className={`px-2.5 py-1 rounded text-[11px] font-medium uppercase tracking-wider transition-colors cursor-pointer ${
+                  timeframe === tf ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
                 {tf}
@@ -142,23 +161,23 @@ export default function TransactionsView({
             ))}
           </div>
 
-          {/* Type Filter */}
+          {/* Type dropdown */}
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="ui-input px-3 py-1.5 rounded-md text-xs cursor-pointer"
+            className="ui-input px-2.5 py-1 text-xs cursor-pointer"
           >
             <option value="all">All Types</option>
-            <option value="expense">Expenses Only</option>
-            <option value="income">Income Only</option>
-            <option value="transfer">Transfers Only</option>
+            <option value="expense">Expenses</option>
+            <option value="income">Income</option>
+            <option value="transfer">Transfers</option>
           </select>
 
-          {/* Category Filter */}
+          {/* Category dropdown */}
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="ui-input px-3 py-1.5 rounded-md text-xs cursor-pointer"
+            className="ui-input px-2.5 py-1 text-xs cursor-pointer"
           >
             <option value="all">All Categories</option>
             {categories.map((cat) => (
@@ -253,23 +272,23 @@ export default function TransactionsView({
                       }`}
                     >
                       {tx.type === "expense" ? "-" : tx.type === "income" ? "+" : ""}
-                      {formatCurrency(tx.amount, tx.currency || tx.accountId?.currency || "USD")}
+                      {formatCurrency(tx.amount, tx.currency || tx.accountId?.currency || "INR")}
                     </span>
                   </td>
 
-                  <td className="p-3 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
+                  <td className="p-3">
+                    <div className="flex items-center justify-center gap-1">
                       <button
                         onClick={() => onOpenAddModal(tx)}
-                        className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer"
-                        title="Edit"
+                        className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
+                        title="Edit Transaction"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => onDeleteTransaction(tx._id)}
-                        className="p-1 rounded hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 cursor-pointer"
-                        title="Delete"
+                        onClick={() => setDeleteTxId(tx._id)}
+                        className="p-1 rounded text-zinc-500 hover:text-rose-400 cursor-pointer"
+                        title="Delete Transaction"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -277,25 +296,33 @@ export default function TransactionsView({
                   </td>
                 </tr>
               ))}
-
-              {transactions.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="p-4">
-                    <EmptyState
-                      icon={Receipt}
-                      title="No Transactions Recorded"
-                      description="Log your daily income, expenses, and account transfers to keep your financial ledger up to date."
-                      actionLabel="+ Add Transaction"
-                      onAction={() => onOpenAddModal()}
-                      onSecondaryAction={onSeedData}
-                    />
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {transactions.length === 0 && (
+        <EmptyState
+          icon={Receipt}
+          title="No Transactions Found"
+          description="Log income, expenses, or transfers to build your financial ledger history."
+          actionLabel="+ Add Transaction"
+          onAction={() => onOpenAddModal()}
+          onSecondaryAction={onSeedData}
+        />
+      )}
+
+      {/* Delete Transaction Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deleteTxId)}
+        onClose={() => setDeleteTxId(null)}
+        onConfirm={confirmExecuteDelete}
+        title="Delete Transaction Entry?"
+        description="Are you sure you want to delete this transaction entry? This will revert its effect on your wallet balance."
+        confirmLabel="Delete Transaction"
+        variant="danger"
+        isLoading={actionLoading}
+      />
     </div>
   );
 }
