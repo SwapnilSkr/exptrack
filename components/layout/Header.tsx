@@ -9,13 +9,9 @@ import {
   Sparkles,
   Trash2,
   LogOut,
-  LayoutDashboard,
-  Receipt,
-  Repeat,
-  Target,
-  CreditCard,
   Menu,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -41,19 +37,19 @@ export default function Header({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/transactions", label: "Transactions", icon: Receipt },
-    { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
-    { href: "/budgets", label: "Budgets", icon: Target },
-    { href: "/accounts", label: "Accounts", icon: CreditCard },
+    { href: "/", label: "Dashboard" },
+    { href: "/transactions", label: "Transactions" },
+    { href: "/subscriptions", label: "Subscriptions" },
+    { href: "/budgets", label: "Budgets" },
+    { href: "/accounts", label: "Accounts" },
   ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-[#09090b]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-13">
-          {/* Left Brand Logo & Mobile Toggle */}
-          <div className="flex items-center gap-4">
+          {/* Brand Logo & Clean Text-Only Nav */}
+          <div className="flex items-center gap-6 sm:gap-8">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-1 text-zinc-400 hover:text-white rounded border border-zinc-800"
@@ -61,67 +57,66 @@ export default function Header({
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
 
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
               <div className="w-6 h-6 rounded bg-white flex items-center justify-center text-zinc-950 font-bold text-xs">
                 <Wallet className="w-3.5 h-3.5" />
               </div>
               <span className="text-sm font-semibold text-white tracking-tight">ExpTrack</span>
             </Link>
+
+            {/* Desktop Nav Items (Clean Text Only) */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`px-3 py-1 rounded text-xs transition-colors ${
+                      isActive
+                        ? "bg-zinc-800/90 text-white font-medium"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${
-                    isActive
-                      ? "bg-zinc-800 text-white font-medium"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {/* Net Worth Ticker */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-xs">
-              <span className="text-zinc-400 text-[11px]">Net Worth</span>
-              <span className="font-semibold text-zinc-100 font-mono">{formatCurrency(netWorth)}</span>
+            <div className="hidden sm:flex items-center gap-1 text-xs">
+              <span className="text-zinc-500 text-[11px]">Net Worth</span>
+              <span className="font-semibold text-zinc-100 font-mono text-xs">{formatCurrency(netWorth)}</span>
             </div>
 
             {/* Quick Add Button */}
             <button
               onClick={onOpenAddModal}
-              className="flex items-center gap-1 px-3 py-1 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Add Expense</span>
+              <span>Expense</span>
             </button>
 
-            {/* User Profile / Menu Dropdown */}
+            {/* User Profile Avatar Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs transition-colors cursor-pointer"
+                className="flex items-center gap-1 p-1 rounded hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                title={user?.name || "Account Settings"}
               >
-                <div className="w-5 h-5 rounded-full bg-zinc-800 text-zinc-200 flex items-center justify-center font-semibold text-[10px]">
+                <div className="w-6 h-6 rounded-full bg-zinc-800 text-zinc-200 flex items-center justify-center font-semibold text-[11px] border border-zinc-700">
                   {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                 </div>
-                <span className="font-medium text-xs hidden md:inline text-zinc-300">{user?.name}</span>
+                <ChevronDown className="w-3 h-3 text-zinc-500" />
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-1.5 w-48 ui-modal rounded-md border border-zinc-800 py-1 z-50">
+                <div className="absolute right-0 mt-1.5 w-48 ui-modal rounded-md border border-zinc-800 py-1 z-50 shadow-xl">
                   <div className="px-3 py-1.5 border-b border-zinc-800">
                     <p className="text-xs font-medium text-white">{user?.name}</p>
                     <p className="text-[10px] text-zinc-500">@{user?.username}</p>
@@ -171,18 +166,16 @@ export default function Header({
         {mobileMenuOpen && (
           <div className="md:hidden py-2 border-t border-zinc-800 space-y-1">
             {navItems.map((item) => {
-              const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                  className={`w-full flex items-center px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                     isActive ? "bg-zinc-800 text-white font-medium" : "text-zinc-400 hover:text-white"
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
                   {item.label}
                 </Link>
               );
