@@ -61,6 +61,8 @@ export default function AppShell({ children }: AppShellProps) {
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [editTxData, setEditTxData] = useState<any>(null);
 
+  const userId = user?._id;
+
   const checkAuth = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/me");
@@ -78,7 +80,7 @@ export default function AppShell({ children }: AppShellProps) {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     setDataLoading(true);
 
     try {
@@ -86,7 +88,6 @@ export default function AppShell({ children }: AppShellProps) {
       const res = await fetch(`/api/bootstrap?timeframe=${timeframe}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.user) setUser(data.user);
         setAccounts(data.accounts || []);
         setTotalAccountBalance(data.totalAccountBalance || 0);
         setTransactions(data.transactions || []);
@@ -100,17 +101,17 @@ export default function AppShell({ children }: AppShellProps) {
     } finally {
       setDataLoading(false);
     }
-  }, [user, timeframe]);
+  }, [userId, timeframe]);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
   useEffect(() => {
-    if (user) {
+    if (userId) {
       fetchData();
     }
-  }, [user, fetchData]);
+  }, [userId, timeframe, fetchData]);
 
   const handleCurrencyChange = async (newCurrency: string) => {
     try {

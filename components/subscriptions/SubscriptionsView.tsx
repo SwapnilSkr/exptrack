@@ -43,15 +43,15 @@ export default function SubscriptionsView({
 
   const currencies = ["USD", "EUR", "GBP", "INR", "CAD", "AUD", "JPY"];
 
-  // When payment account changes, auto-sync currency to matching account currency
+  // When payment account changes inside modal, auto-sync currency to matching account currency
   useEffect(() => {
-    if (accountId && accounts.length > 0) {
+    if (showModal && accountId && accounts.length > 0) {
       const selectedAcc = accounts.find((a) => a._id === accountId);
       if (selectedAcc && selectedAcc.currency) {
         setCurrency(selectedAcc.currency);
       }
     }
-  }, [accountId, accounts]);
+  }, [showModal, accountId, accounts]);
 
   const handleOpenAdd = () => {
     setEditingSub(null);
