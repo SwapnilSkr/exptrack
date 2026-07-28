@@ -86,6 +86,7 @@ export async function PUT(
     // Apply updates
     existingTx.title = body.title ?? existingTx.title;
     existingTx.amount = body.amount !== undefined ? Number(body.amount) : existingTx.amount;
+    existingTx.currency = body.currency ?? existingTx.currency;
     existingTx.type = body.type ?? existingTx.type;
     existingTx.category = body.category ?? existingTx.category;
     existingTx.accountId = body.accountId ?? existingTx.accountId;

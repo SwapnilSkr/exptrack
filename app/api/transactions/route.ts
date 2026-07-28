@@ -64,8 +64,8 @@ export async function GET(req: NextRequest) {
     }
 
     const transactions = await Transaction.find(query)
-      .populate("accountId", "name type color icon")
-      .populate("toAccountId", "name type color icon")
+      .populate("accountId", "name type color icon currency")
+      .populate("toAccountId", "name type color icon currency")
       .sort({ date: -1, createdAt: -1 });
 
     return NextResponse.json({ transactions });
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, amount, type, category, accountId, toAccountId, date, tags, paymentMethod, notes } = body;
+    const { title, amount, currency, type, category, accountId, toAccountId, date, tags, paymentMethod, notes } = body;
 
     if (!title || !amount || !type || !accountId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -90,10 +90,14 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
+    const account = await Account.findById(accountId);
+    const resolvedCurrency = currency || (account && account.currency ? account.currency : "USD");
+
     const transaction = await Transaction.create({
       userId: auth.userId,
       title,
       amount: Number(amount),
+      currency: resolvedCurrency,
       type,
       category: category || "General",
       accountId,
@@ -105,7 +109,6 @@ export async function POST(req: NextRequest) {
     });
 
     // Update account balances
-    const account = await Account.findById(accountId);
     if (account) {
       if (type === "expense") {
         account.balance -= Number(amount);

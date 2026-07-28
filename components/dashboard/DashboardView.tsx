@@ -278,7 +278,7 @@ export default function DashboardView({
                     }`}
                   >
                     {tx.type === "expense" ? "-" : tx.type === "income" ? "+" : ""}
-                    {formatCurrency(tx.amount)}
+                    {formatCurrency(tx.amount, tx.currency || tx.accountId?.currency || "USD")}
                   </span>
                   {tx.accountId && (
                     <p className="text-[10px] text-zinc-500 truncate">{tx.accountId.name || "Wallet"}</p>

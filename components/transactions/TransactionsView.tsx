@@ -244,16 +244,16 @@ export default function TransactionsView({
 
                   <td className="p-3 text-right">
                     <span
-                      className={`font-semibold ${
+                      className={`font-semibold font-mono ${
                         tx.type === "income"
                           ? "text-emerald-400"
                           : tx.type === "expense"
-                          ? "text-zinc-100"
+                          ? "text-rose-400"
                           : "text-blue-400"
                       }`}
                     >
                       {tx.type === "expense" ? "-" : tx.type === "income" ? "+" : ""}
-                      {formatCurrency(tx.amount)}
+                      {formatCurrency(tx.amount, tx.currency || tx.accountId?.currency || "USD")}
                     </span>
                   </td>
 
