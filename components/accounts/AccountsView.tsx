@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { CreditCard, Landmark, PiggyBank, Wallet, Plus, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface AccountsViewProps {
   accounts: any[];
   totalBalance: number;
   onRefresh: () => void;
+  onSeedData?: () => void;
 }
 
-export default function AccountsView({ accounts, totalBalance, onRefresh }: AccountsViewProps) {
+export default function AccountsView({ accounts, totalBalance, onRefresh, onSeedData }: AccountsViewProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState("checking");
@@ -141,9 +143,14 @@ export default function AccountsView({ accounts, totalBalance, onRefresh }: Acco
       </div>
 
       {accounts.length === 0 && (
-        <div className="ui-card p-12 text-center text-zinc-500 text-xs">
-          No wallets or accounts configured yet.
-        </div>
+        <EmptyState
+          icon={Wallet}
+          title="No Wallets or Accounts Configured"
+          description="Add bank accounts, credit cards, or cash wallets to start tracking your net worth and balances."
+          actionLabel="+ Add Wallet"
+          onAction={() => setShowAddModal(true)}
+          onSecondaryAction={onSeedData}
+        />
       )}
 
       {/* Add Account Modal */}

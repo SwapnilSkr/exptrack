@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Repeat, Plus, Zap, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface SubscriptionsViewProps {
   subscriptions: any[];
@@ -11,6 +12,7 @@ interface SubscriptionsViewProps {
   onLogSubscription: (id: string) => void;
   onDeleteSubscription: (id: string) => void;
   onRefresh: () => void;
+  onSeedData?: () => void;
 }
 
 export default function SubscriptionsView({
@@ -20,6 +22,7 @@ export default function SubscriptionsView({
   onLogSubscription,
   onDeleteSubscription,
   onRefresh,
+  onSeedData,
 }: SubscriptionsViewProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [name, setName] = useState("");
@@ -177,9 +180,14 @@ export default function SubscriptionsView({
       </div>
 
       {subscriptions.length === 0 && (
-        <div className="ui-card p-12 text-center text-zinc-500 text-xs">
-          No subscriptions currently tracked. Click "Add Subscription" to start!
-        </div>
+        <EmptyState
+          icon={Repeat}
+          title="No Active Subscriptions Tracked"
+          description="Keep track of your monthly SaaS tools, memberships, streaming services, and auto-renewals."
+          actionLabel="+ Add Subscription"
+          onAction={() => setShowAddModal(true)}
+          onSecondaryAction={onSeedData}
+        />
       )}
 
       {/* Add Subscription Modal */}

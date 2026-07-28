@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Wallet,
   Plus,
@@ -14,15 +16,12 @@ import {
   CreditCard,
   Menu,
   X,
-  User as UserIcon,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface HeaderProps {
   user: { name: string; username: string } | null;
   netWorth: number;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
   onOpenAddModal: () => void;
   onSeedData: () => void;
   onClearData: () => void;
@@ -32,22 +31,21 @@ interface HeaderProps {
 export default function Header({
   user,
   netWorth,
-  activeTab,
-  setActiveTab,
   onOpenAddModal,
   onSeedData,
   onClearData,
   onLogout,
 }: HeaderProps) {
+  const pathname = usePathname();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "transactions", label: "Transactions", icon: Receipt },
-    { id: "subscriptions", label: "Subscriptions", icon: Repeat },
-    { id: "budgets", label: "Budgets", icon: Target },
-    { id: "accounts", label: "Accounts", icon: CreditCard },
+    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/transactions", label: "Transactions", icon: Receipt },
+    { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
+    { href: "/budgets", label: "Budgets", icon: Target },
+    { href: "/accounts", label: "Accounts", icon: CreditCard },
   ];
 
   return (
@@ -63,24 +61,24 @@ export default function Header({
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab("dashboard")}>
+            <Link href="/" className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-md bg-zinc-100 flex items-center justify-center text-zinc-950 font-semibold text-sm">
                 <Wallet className="w-4 h-4" />
               </div>
               <span className="text-sm font-semibold text-white tracking-tight">ExpTrack</span>
-            </div>
+            </Link>
           </div>
 
           {/* Desktop Nav Items */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     isActive
                       ? "bg-zinc-800 text-white font-semibold"
                       : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
@@ -88,7 +86,7 @@ export default function Header({
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {item.label}
-                </button>
+                </Link>
               );
             })}
           </nav>
@@ -174,21 +172,19 @@ export default function Header({
           <div className="md:hidden py-3 border-t border-zinc-800 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setMobileMenuOpen(false);
-                  }}
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                     isActive ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                   {item.label}
-                </button>
+                </Link>
               );
             })}
           </div>

@@ -9,8 +9,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ArrowLeftRight,
+  Receipt,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface TransactionsViewProps {
   transactions: any[];
@@ -25,6 +27,7 @@ interface TransactionsViewProps {
   setFilterCategory: (cat: string) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  onSeedData?: () => void;
 }
 
 export default function TransactionsView({
@@ -40,6 +43,7 @@ export default function TransactionsView({
   setFilterCategory,
   searchQuery,
   setSearchQuery,
+  onSeedData,
 }: TransactionsViewProps) {
   const categories = [
     "Housing",
@@ -276,8 +280,15 @@ export default function TransactionsView({
 
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-zinc-500">
-                    No matching transactions found.
+                  <td colSpan={7} className="p-4">
+                    <EmptyState
+                      icon={Receipt}
+                      title="No Transactions Recorded"
+                      description="Log your daily income, expenses, and account transfers to keep your financial ledger up to date."
+                      actionLabel="+ Add Transaction"
+                      onAction={() => onOpenAddModal()}
+                      onSecondaryAction={onSeedData}
+                    />
                   </td>
                 </tr>
               )}

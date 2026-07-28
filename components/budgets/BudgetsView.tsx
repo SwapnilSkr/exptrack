@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, AlertTriangle, CheckCircle2, Target } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface BudgetsViewProps {
   budgets: any[];
   onRefresh: () => void;
+  onSeedData?: () => void;
 }
 
-export default function BudgetsView({ budgets, onRefresh }: BudgetsViewProps) {
+export default function BudgetsView({ budgets, onRefresh, onSeedData }: BudgetsViewProps) {
   const [showModal, setShowModal] = useState(false);
   const [category, setCategory] = useState("Food");
   const [monthlyLimit, setMonthlyLimit] = useState("");
@@ -137,9 +139,14 @@ export default function BudgetsView({ budgets, onRefresh }: BudgetsViewProps) {
       </div>
 
       {budgets.length === 0 && (
-        <div className="ui-card p-12 text-center text-zinc-500 text-xs">
-          No budgets configured. Click "Set Category Limit" to start!
-        </div>
+        <EmptyState
+          icon={Target}
+          title="No Category Budgets Configured"
+          description="Set monthly spending limits for categories like Food, Housing, Tech, and Entertainment to control your budget."
+          actionLabel="+ Set Category Limit"
+          onAction={() => setShowModal(true)}
+          onSecondaryAction={onSeedData}
+        />
       )}
 
       {/* Set Budget Modal */}
