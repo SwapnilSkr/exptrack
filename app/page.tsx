@@ -2,6 +2,7 @@
 
 import AppShell from "@/components/layout/AppShell";
 import DashboardView from "@/components/dashboard/DashboardView";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 
 export default function DashboardPage() {
   return (
@@ -14,17 +15,24 @@ export default function DashboardPage() {
         setTimeframe,
         onOpenAddModal,
         onLogSubscription,
-      }) => (
-        <DashboardView
-          analytics={analytics}
-          transactions={transactions}
-          subscriptions={subscriptions}
-          timeframe={timeframe}
-          setTimeframe={setTimeframe}
-          onOpenAddModal={onOpenAddModal}
-          onLogSubscription={onLogSubscription}
-        />
-      )}
+        dataLoading,
+      }) => {
+        if (dataLoading && !analytics) {
+          return <DashboardSkeleton />;
+        }
+
+        return (
+          <DashboardView
+            analytics={analytics}
+            transactions={transactions}
+            subscriptions={subscriptions}
+            timeframe={timeframe}
+            setTimeframe={setTimeframe}
+            onOpenAddModal={onOpenAddModal}
+            onLogSubscription={onLogSubscription}
+          />
+        );
+      }}
     </AppShell>
   );
 }

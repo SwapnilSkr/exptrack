@@ -2,6 +2,7 @@
 
 import AppShell from "@/components/layout/AppShell";
 import SubscriptionsView from "@/components/subscriptions/SubscriptionsView";
+import SubscriptionsSkeleton from "@/components/subscriptions/SubscriptionsSkeleton";
 
 export default function SubscriptionsPage() {
   return (
@@ -15,18 +16,25 @@ export default function SubscriptionsPage() {
         fetchData,
         onSeedData,
         userCurrency,
-      }) => (
-        <SubscriptionsView
-          subscriptions={subscriptions}
-          metrics={subMetrics}
-          accounts={accounts}
-          onLogSubscription={onLogSubscription}
-          onDeleteSubscription={onDeleteSubscription}
-          onRefresh={fetchData}
-          onSeedData={onSeedData}
-          userCurrency={userCurrency}
-        />
-      )}
+        dataLoading,
+      }) => {
+        if (dataLoading && subscriptions.length === 0) {
+          return <SubscriptionsSkeleton />;
+        }
+
+        return (
+          <SubscriptionsView
+            subscriptions={subscriptions}
+            metrics={subMetrics}
+            accounts={accounts}
+            onLogSubscription={onLogSubscription}
+            onDeleteSubscription={onDeleteSubscription}
+            onRefresh={fetchData}
+            onSeedData={onSeedData}
+            userCurrency={userCurrency}
+          />
+        );
+      }}
     </AppShell>
   );
 }

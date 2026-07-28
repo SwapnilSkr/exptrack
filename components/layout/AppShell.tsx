@@ -32,6 +32,7 @@ interface AppShellProps {
     fetchData: () => void;
     userCurrency: string;
     handleCurrencyChange: (newCurrency: string) => Promise<void>;
+    dataLoading: boolean;
   }) => ReactNode;
 }
 
@@ -40,6 +41,7 @@ export default function AppShell({ children }: AppShellProps) {
   const [authChecked, setAuthChecked] = useState(false);
 
   const [timeframe, setTimeframe] = useState("monthly");
+  const [dataLoading, setDataLoading] = useState(true);
 
   // Data states
   const [analytics, setAnalytics] = useState<any>(null);
@@ -77,40 +79,40 @@ export default function AppShell({ children }: AppShellProps) {
 
   const fetchData = useCallback(async () => {
     if (!user) return;
+    setDataLoading(true);
 
     try {
-      const resAnalytics = await fetch(`/api/analytics?timeframe=${timeframe}`);
-      const dataAnalytics = await resAnalytics.json();
-      if (resAnalytics.ok) setAnalytics(dataAnalytics);
+      const [resAnalytics, resTx, resSub, resBudget, resAccounts] = await Promise.all([
+        fetch(`/api/analytics?timeframe=${timeframe}`),
+        fetch(`/api/transactions?timeframe=${timeframe}${filterType !== "all" ? `&type=${filterType}` : ""}${filterCategory !== "all" ? `&category=${filterCategory}` : ""}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""}`),
+        fetch("/api/subscriptions"),
+        fetch("/api/budgets"),
+        fetch("/api/accounts"),
+      ]);
 
-      let txUrl = `/api/transactions?timeframe=${timeframe}`;
-      if (filterType !== "all") txUrl += `&type=${filterType}`;
-      if (filterCategory !== "all") txUrl += `&category=${filterCategory}`;
-      if (searchQuery) txUrl += `&search=${encodeURIComponent(searchQuery)}`;
-
-      const resTx = await fetch(txUrl);
-      const dataTx = await resTx.json();
-      if (resTx.ok) setTransactions(dataTx.transactions || []);
-
-      const resSub = await fetch("/api/subscriptions");
-      const dataSub = await resSub.json();
-      if (resSub.ok) {
-        setSubscriptions(dataSub.subscriptions || []);
-        setSubMetrics(dataSub.metrics || { totalMonthly: 0, totalYearly: 0, activeCount: 0 });
+      if (resAnalytics.ok) setAnalytics(await resAnalytics.json());
+      if (resTx.ok) {
+        const dTx = await resTx.json();
+        setTransactions(dTx.transactions || []);
       }
-
-      const resBudget = await fetch("/api/budgets");
-      const dataBudget = await resBudget.json();
-      if (resBudget.ok) setBudgets(dataBudget.budgets || []);
-
-      const resAccounts = await fetch("/api/accounts");
-      const dataAccounts = await resAccounts.json();
+      if (resSub.ok) {
+        const dSub = await resSub.json();
+        setSubscriptions(dSub.subscriptions || []);
+        setSubMetrics(dSub.metrics || { totalMonthly: 0, totalYearly: 0, activeCount: 0 });
+      }
+      if (resBudget.ok) {
+        const dBudget = await resBudget.json();
+        setBudgets(dBudget.budgets || []);
+      }
       if (resAccounts.ok) {
-        setAccounts(dataAccounts.accounts || []);
-        setTotalAccountBalance(dataAccounts.totalBalance || 0);
+        const dAcc = await resAccounts.json();
+        setAccounts(dAcc.accounts || []);
+        setTotalAccountBalance(dAcc.totalBalance || 0);
       }
     } catch (err) {
       console.error("Error loading financial data:", err);
+    } finally {
+      setDataLoading(false);
     }
   }, [user, timeframe, filterType, filterCategory, searchQuery]);
 
@@ -270,6 +272,7 @@ export default function AppShell({ children }: AppShellProps) {
           fetchData,
           userCurrency,
           handleCurrencyChange,
+          dataLoading,
         })}
       </main>
 
