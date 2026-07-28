@@ -84,7 +84,7 @@ export default function AccountsView({
 
       // Auto-sync global user currency preference when setting/editing account currency
       if (currency && currency !== userCurrency && onCurrencyChange) {
-        onCurrencyChange(currency);
+        await onCurrencyChange(currency);
       }
 
       setShowModal(false);
@@ -119,9 +119,6 @@ export default function AccountsView({
     }
   };
 
-  // Determine display currency for combined total balance (if single account or primary account has currency)
-  const primaryCurrency = accounts.length > 0 && accounts[0].currency ? accounts[0].currency : userCurrency;
-
   return (
     <div className="w-full space-y-6">
       {/* Header */}
@@ -143,8 +140,8 @@ export default function AccountsView({
       {/* Net Balance Header Card */}
       <div className="ui-card p-4 flex items-center justify-between">
         <div>
-          <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Combined Total Balance</span>
-          <h3 className="text-2xl font-bold font-mono text-zinc-100 mt-0.5">{formatCurrency(totalBalance, primaryCurrency)}</h3>
+          <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Combined Total Balance ({userCurrency})</span>
+          <h3 className="text-2xl font-bold font-mono text-zinc-100 mt-0.5">{formatCurrency(totalBalance, userCurrency)}</h3>
         </div>
       </div>
 
@@ -265,7 +262,7 @@ export default function AccountsView({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Current Balance ($)</label>
+                <label className="block text-xs font-medium text-zinc-300 mb-1">Current Balance</label>
                 <input
                   type="number"
                   step="0.01"
