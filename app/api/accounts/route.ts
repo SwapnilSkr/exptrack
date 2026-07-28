@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import Account from "@/models/Account";
 import User from "@/models/User";
-import { convertCurrency } from "@/lib/currency";
+import { convertCurrency, fetchLiveExchangeRates } from "@/lib/currency";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     }
 
     await connectDB();
+    await fetchLiveExchangeRates();
 
     const user = await User.findById(auth.userId);
     const targetCurrency = user?.currency || "USD";

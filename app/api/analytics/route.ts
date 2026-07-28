@@ -5,7 +5,7 @@ import Transaction from "@/models/Transaction";
 import Account from "@/models/Account";
 import Subscription from "@/models/Subscription";
 import User from "@/models/User";
-import { convertCurrency } from "@/lib/currency";
+import { convertCurrency, fetchLiveExchangeRates } from "@/lib/currency";
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,11 +18,12 @@ export async function GET(req: NextRequest) {
     const timeframe = searchParams.get("timeframe") || "monthly"; // daily, monthly, yearly
 
     await connectDB();
+    await fetchLiveExchangeRates();
 
     const user = await User.findById(auth.userId);
     const targetCurrency = user?.currency || "USD";
 
-    // 1. Accounts & Net Worth converted to target currency
+    // 1. Accounts & Net Worth converted to target currency using live rates
     const accounts = await Account.find({ userId: auth.userId });
     const netWorth = accounts.reduce((acc, curr) => {
       const accCurrency = curr.currency || "USD";
