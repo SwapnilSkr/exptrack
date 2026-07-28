@@ -76,10 +76,11 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <div className="w-full max-w-sm ui-modal rounded-xl p-6 border border-zinc-800 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 overflow-y-auto">
+      <div className="w-full max-w-sm ui-modal rounded-xl p-5 sm:p-6 border border-zinc-800 shadow-2xl my-auto">
+        {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-zinc-100 text-zinc-950 font-bold mb-2">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white text-zinc-950 font-bold mb-2.5">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-white tracking-tight">ExpTrack</h2>
@@ -91,7 +92,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
           <button
             type="button"
             onClick={() => { setIsLogin(true); setError(""); }}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
+            className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors cursor-pointer ${
               isLogin ? "bg-zinc-800 text-white shadow-xs" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -100,7 +101,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
           <button
             type="button"
             onClick={() => { setIsLogin(false); setError(""); }}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors ${
+            className={`flex-1 py-1.5 text-xs font-semibold rounded transition-colors cursor-pointer ${
               !isLogin ? "bg-zinc-800 text-white shadow-xs" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -109,55 +110,64 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
         </div>
 
         {error && (
-          <div className="mb-4 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-2 text-red-400 text-xs">
+          <div className="mb-4 p-2.5 rounded bg-rose-500/10 border border-rose-500/20 flex items-center gap-2 text-rose-400 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {!isLogin && (
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1">Full Name</label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Alex Morgan"
-                className="w-full ui-input px-3 py-2 rounded-lg text-xs"
-              />
+              <div className="relative">
+                <User className="w-3.5 h-3.5 absolute left-3 top-3 text-zinc-500" />
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Alex Morgan"
+                  className="w-full ui-input pl-9 pr-3 py-2 text-xs"
+                />
+              </div>
             </div>
           )}
 
           <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1">Username</label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
-              className="w-full ui-input px-3 py-2 rounded-lg text-xs"
-            />
+            <div className="relative">
+              <User className="w-3.5 h-3.5 absolute left-3 top-3 text-zinc-500" />
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                className="w-full ui-input pl-9 pr-3 py-2 text-xs"
+              />
+            </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1">Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full ui-input px-3 py-2 rounded-lg text-xs"
-            />
+            <div className="relative">
+              <Lock className="w-3.5 h-3.5 absolute left-3 top-3 text-zinc-500" />
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full ui-input pl-9 pr-3 py-2 text-xs"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="w-full mt-2 py-2.5 bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-xs rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
             <ArrowRight className="w-3.5 h-3.5" />
@@ -169,7 +179,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
             <div className="w-full border-t border-zinc-800" />
           </div>
           <span className="relative px-2 bg-[#121215] text-zinc-500 text-[10px] uppercase font-semibold">
-            Or Demo
+            Or Demo Evaluation
           </span>
         </div>
 
@@ -177,10 +187,10 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
           type="button"
           onClick={handleDemoLogin}
           disabled={loading}
-          className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-medium text-xs rounded transition-colors flex items-center justify-center gap-2 cursor-pointer"
         >
           <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          1-Click Demo Account (With Pre-loaded Data)
+          1-Click Demo Account (With Sample Data)
         </button>
       </div>
     </div>
