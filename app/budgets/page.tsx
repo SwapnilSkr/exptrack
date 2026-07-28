@@ -6,8 +6,8 @@ import BudgetsView from "@/components/budgets/BudgetsView";
 export default function BudgetsPage() {
   return (
     <AppShell>
-      {({ budgets, fetchData, onSeedData }) => (
-        <BudgetsView budgets={budgets} onRefresh={fetchData} onSeedData={onSeedData} />
+      {({ budgets, fetchData, onSeedData, userCurrency }) => (
+        <BudgetsView budgets={budgets} onRefresh={fetchData} onSeedData={onSeedData} userCurrency={userCurrency} />
       )}
     </AppShell>
   );

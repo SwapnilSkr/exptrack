@@ -49,8 +49,10 @@ export default function DashboardView({
     monthlyExpense: 0,
     savingsRate: 0,
     monthlySubscriptionCost: 0,
+    currency: "USD",
   };
 
+  const userCurrency = metrics.currency || "USD";
   const trendData = analytics?.trendData || [];
   const categoryData = analytics?.categoryData || [];
 
@@ -62,18 +64,18 @@ export default function DashboardView({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
         {/* Net Worth */}
         <div className="ui-card p-3.5 sm:p-4 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Net Worth</span>
+          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Net Worth ({userCurrency})</span>
           <div className="mt-1.5">
-            <h3 className="text-lg sm:text-2xl font-bold font-mono text-white tracking-tight">{formatCurrency(metrics.netWorth)}</h3>
+            <h3 className="text-lg sm:text-2xl font-bold font-mono text-white tracking-tight">{formatCurrency(metrics.netWorth, userCurrency)}</h3>
             <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 truncate">All accounts balance</p>
           </div>
         </div>
 
         {/* Monthly Income */}
         <div className="ui-card p-3.5 sm:p-4 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Income</span>
+          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Income ({userCurrency})</span>
           <div className="mt-1.5">
-            <h3 className="text-lg sm:text-2xl font-bold font-mono text-emerald-400 tracking-tight">{formatCurrency(metrics.monthlyIncome)}</h3>
+            <h3 className="text-lg sm:text-2xl font-bold font-mono text-emerald-400 tracking-tight">{formatCurrency(metrics.monthlyIncome, userCurrency)}</h3>
             <p className="text-[10px] sm:text-[11px] text-emerald-500/90 mt-0.5 flex items-center gap-0.5 font-medium truncate">
               <ArrowUpRight className="w-3 h-3 shrink-0" /> Cash inflow
             </p>
@@ -82,9 +84,9 @@ export default function DashboardView({
 
         {/* Monthly Expenses */}
         <div className="ui-card p-3.5 sm:p-4 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Expenses</span>
+          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Expenses ({userCurrency})</span>
           <div className="mt-1.5">
-            <h3 className="text-lg sm:text-2xl font-bold font-mono text-rose-400 tracking-tight">{formatCurrency(metrics.monthlyExpense)}</h3>
+            <h3 className="text-lg sm:text-2xl font-bold font-mono text-rose-400 tracking-tight">{formatCurrency(metrics.monthlyExpense, userCurrency)}</h3>
             <p className="text-[10px] sm:text-[11px] text-rose-500/90 mt-0.5 flex items-center gap-0.5 font-medium truncate">
               <ArrowDownRight className="w-3 h-3 shrink-0" /> Outflow tracking
             </p>
@@ -107,9 +109,9 @@ export default function DashboardView({
 
         {/* Subscriptions */}
         <div className="ui-card p-3.5 sm:p-4 flex flex-col justify-between col-span-2 sm:col-span-1">
-          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Subscriptions</span>
+          <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Subscriptions ({userCurrency})</span>
           <div className="mt-1.5">
-            <h3 className="text-lg sm:text-2xl font-bold font-mono text-zinc-100 tracking-tight">{formatCurrency(metrics.monthlySubscriptionCost)}</h3>
+            <h3 className="text-lg sm:text-2xl font-bold font-mono text-zinc-100 tracking-tight">{formatCurrency(metrics.monthlySubscriptionCost, userCurrency)}</h3>
             <p className="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 truncate">Monthly recurring</p>
           </div>
         </div>
@@ -125,7 +127,7 @@ export default function DashboardView({
                 <TrendingUp className="w-4 h-4 text-zinc-400" />
                 Cash Flow Breakdown
               </h3>
-              <p className="text-xs text-zinc-400">Income & Expense trend comparison</p>
+              <p className="text-xs text-zinc-400">Income & Expense trend comparison ({userCurrency})</p>
             </div>
 
             {/* Timeframe Selector */}
@@ -158,7 +160,7 @@ export default function DashboardView({
                     color: "#f4f4f5",
                     fontSize: "12px",
                   }}
-                  formatter={(value: any) => [formatCurrency(Number(value)), ""]}
+                  formatter={(value: any) => [formatCurrency(Number(value), userCurrency), ""]}
                 />
                 <Bar dataKey="income" name="Income" fill="#10b981" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="expense" name="Expense" fill="#ef4444" radius={[2, 2, 0, 0]} />
@@ -202,7 +204,7 @@ export default function DashboardView({
                       color: "#f4f4f5",
                       fontSize: "12px",
                     }}
-                    formatter={(value: any) => [formatCurrency(Number(value)), "Spent"]}
+                    formatter={(value: any) => [formatCurrency(Number(value), userCurrency), "Spent"]}
                   />
                   <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: "11px", color: "#a1a1aa" }} />
                 </PieChart>
@@ -273,12 +275,12 @@ export default function DashboardView({
                       tx.type === "income"
                         ? "text-emerald-400"
                         : tx.type === "expense"
-                        ? "text-zinc-100"
+                        ? "text-rose-400"
                         : "text-zinc-300"
                     }`}
                   >
                     {tx.type === "expense" ? "-" : tx.type === "income" ? "+" : ""}
-                    {formatCurrency(tx.amount, tx.currency || tx.accountId?.currency || "USD")}
+                    {formatCurrency(tx.amount, tx.currency || tx.accountId?.currency || userCurrency)}
                   </span>
                   {tx.accountId && (
                     <p className="text-[10px] text-zinc-500 truncate">{tx.accountId.name || "Wallet"}</p>
@@ -305,29 +307,33 @@ export default function DashboardView({
           </div>
 
           <div className="space-y-2.5">
-            {upcomingSubscriptions.map((sub) => (
-              <div
-                key={sub._id}
-                className="p-3 rounded bg-zinc-900/60 border border-zinc-800/60 flex items-center justify-between"
-              >
-                <div className="min-w-0">
-                  <h4 className="text-xs font-semibold text-white truncate">{sub.name}</h4>
-                  <p className="text-[11px] text-zinc-400 mt-0.5">
-                    Due: {formatDate(sub.nextBillingDate)}
-                  </p>
+            {upcomingSubscriptions.map((sub) => {
+              const subCurrency = sub.currency || sub.accountId?.currency || userCurrency;
+              const qty = sub.quantity || 1;
+              return (
+                <div
+                  key={sub._id}
+                  className="p-3 rounded bg-zinc-900/60 border border-zinc-800/60 flex items-center justify-between"
+                >
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-semibold text-white truncate">{sub.name}</h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Due: {formatDate(sub.nextBillingDate)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-bold font-mono text-zinc-100">{formatCurrency(sub.amount * qty, subCurrency)}</span>
+                    <button
+                      onClick={() => onLogSubscription(sub._id)}
+                      title="1-Click Log Expense Now"
+                      className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 cursor-pointer"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs font-bold font-mono text-zinc-100">{formatCurrency(sub.amount)}</span>
-                  <button
-                    onClick={() => onLogSubscription(sub._id)}
-                    title="1-Click Log Expense Now"
-                    className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 cursor-pointer"
-                  >
-                    <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {upcomingSubscriptions.length === 0 && (
               <div className="py-8 text-center text-zinc-500 text-xs">No active subscriptions configured</div>
