@@ -56,17 +56,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Clear old sample transactions & subscriptions to re-seed cleanly
+    // 2. Clear old sample data
     await Transaction.deleteMany({ userId: auth.userId, isSample: true });
     await Subscription.deleteMany({ userId: auth.userId, isSample: true });
     await Budget.deleteMany({ userId: auth.userId, isSample: true });
 
-    // 3. Create Sample Subscriptions
+    // 3. Create Sample Subscriptions (Including multi-count sample)
     const now = new Date();
     const sub1 = await Subscription.create({
       userId: auth.userId,
       name: "Netflix Premium 4K",
       amount: 22.99,
+      quantity: 1,
       billingCycle: "monthly",
       category: "Subscriptions",
       accountId: creditCard._id,
@@ -78,10 +79,11 @@ export async function POST(req: NextRequest) {
 
     const sub2 = await Subscription.create({
       userId: auth.userId,
-      name: "Spotify Family Plan",
-      amount: 16.99,
+      name: "Cursor Pro AI (Team Seats)",
+      amount: 20.0,
+      quantity: 2,
       billingCycle: "monthly",
-      category: "Subscriptions",
+      category: "Tech",
       accountId: checkingAccount._id,
       nextBillingDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 11),
       status: "active",
@@ -91,25 +93,13 @@ export async function POST(req: NextRequest) {
 
     const sub3 = await Subscription.create({
       userId: auth.userId,
-      name: "ChatGPT Plus",
+      name: "Claude Pro / ChatGPT Plus",
       amount: 20.0,
+      quantity: 1,
       billingCycle: "monthly",
       category: "Tech",
       accountId: creditCard._id,
       nextBillingDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6),
-      status: "active",
-      autoRenew: true,
-      isSample: true,
-    });
-
-    const sub4 = await Subscription.create({
-      userId: auth.userId,
-      name: "Equinox Gym Pass",
-      amount: 149.0,
-      billingCycle: "monthly",
-      category: "Health",
-      accountId: checkingAccount._id,
-      nextBillingDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 18),
       status: "active",
       autoRenew: true,
       isSample: true,
@@ -125,7 +115,7 @@ export async function POST(req: NextRequest) {
       { userId: auth.userId, category: "Subscriptions", monthlyLimit: 150, isSample: true },
     ]);
 
-    // 5. Create Sample Transactions (Income & Expenses across past 30 days)
+    // 5. Create Sample Transactions
     const sampleTxs = [
       {
         userId: auth.userId,
@@ -156,14 +146,13 @@ export async function POST(req: NextRequest) {
       {
         userId: auth.userId,
         type: "expense",
-        title: "Apple Store - MagSafe Charger",
-        amount: 39.0,
+        title: "Cursor Pro AI (x2 Seats)",
+        amount: 40.0,
         category: "Tech",
         accountId: creditCard._id,
         date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3),
-        tags: ["Accessories", "Apple"],
-        paymentMethod: "Apple Pay",
-        notes: "Travel charger",
+        tags: ["AI", "Coding"],
+        paymentMethod: "Card",
         isSample: true,
       },
       {
@@ -210,14 +199,14 @@ export async function POST(req: NextRequest) {
         category: "Food",
         accountId: creditCard._id,
         date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7),
-        tags: ["DiningOut", "Weekend"],
+        tags: ["DiningOut"],
         paymentMethod: "Card",
         isSample: true,
       },
       {
         userId: auth.userId,
         type: "expense",
-        title: "ChatGPT Plus Subscription",
+        title: "Claude Pro Subscription",
         amount: 20.0,
         category: "Tech",
         accountId: creditCard._id,

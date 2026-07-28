@@ -23,25 +23,29 @@ export async function POST(
       return NextResponse.json({ error: "Subscription not found" }, { status: 404 });
     }
 
+    const qty = sub.quantity || 1;
+    const totalAmount = sub.amount * qty;
+    const itemTitle = qty > 1 ? `${sub.name} (x${qty}) Subscription` : `${sub.name} Subscription`;
+
     // 1. Create Posted Expense Transaction
     const transaction = await Transaction.create({
       userId: auth.userId,
-      title: `${sub.name} Subscription`,
-      amount: sub.amount,
+      title: itemTitle,
+      amount: totalAmount,
       type: "expense",
       category: sub.category || "Subscriptions",
       accountId: sub.accountId,
       date: sub.nextBillingDate || new Date(),
       tags: ["Subscription", sub.name.toLowerCase()],
       paymentMethod: "Auto-Pay",
-      notes: `Logged automatically from recurring subscription ${sub.name}`,
+      notes: `Logged automatically from recurring subscription ${sub.name} (qty: ${qty})`,
       subscriptionId: sub._id,
     });
 
     // 2. Update Account Balance
     const account = await Account.findById(sub.accountId);
     if (account) {
-      account.balance -= sub.amount;
+      account.balance -= totalAmount;
       await account.save();
     }
 
@@ -62,11 +66,15 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `Expense logged for ${sub.name}. Next renewal set to ${nextDate.toISOString().split("T")[0]}`,
+      message: `Expense logged for ${sub.name} (${formatCurrency(totalAmount)}). Next renewal set to ${nextDate.toISOString().split("T")[0]}`,
       transaction,
       subscription: sub,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Log subscription expense failed" }, { status: 500 });
   }
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 }

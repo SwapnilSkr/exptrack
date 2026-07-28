@@ -16,24 +16,27 @@ export async function GET(req: NextRequest) {
       .populate("accountId", "name type color icon")
       .sort({ nextBillingDate: 1 });
 
-    // Calculate totals
+    // Calculate totals considering quantity
     let monthlyTotal = 0;
     let yearlyTotal = 0;
 
     subscriptions.forEach((sub) => {
       if (sub.status === "active") {
+        const qty = sub.quantity || 1;
+        const totalSubAmount = sub.amount * qty;
+
         if (sub.billingCycle === "monthly") {
-          monthlyTotal += sub.amount;
-          yearlyTotal += sub.amount * 12;
+          monthlyTotal += totalSubAmount;
+          yearlyTotal += totalSubAmount * 12;
         } else if (sub.billingCycle === "yearly") {
-          monthlyTotal += sub.amount / 12;
-          yearlyTotal += sub.amount;
+          monthlyTotal += totalSubAmount / 12;
+          yearlyTotal += totalSubAmount;
         } else if (sub.billingCycle === "weekly") {
-          monthlyTotal += (sub.amount * 52) / 12;
-          yearlyTotal += sub.amount * 52;
+          monthlyTotal += (totalSubAmount * 52) / 12;
+          yearlyTotal += totalSubAmount * 52;
         } else if (sub.billingCycle === "quarterly") {
-          monthlyTotal += sub.amount / 3;
-          yearlyTotal += sub.amount * 4;
+          monthlyTotal += totalSubAmount / 3;
+          yearlyTotal += totalSubAmount * 4;
         }
       }
     });
@@ -59,10 +62,32 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, amount, billingCycle, category, accountId, nextBillingDate, notes, autoRenew } = body;
+    const { name, amount, quantity, billingCycle, category, accountId, nextBillingDate, notes, autoRenew } = body;
 
-    if (!name || !amount || !accountId || !nextBillingDate) {
+    if (!name || amount === undefined || !accountId) {
       return NextResponse.json({ error: "Missing required subscription fields" }, { status: 400 });
+    }
+
+    const cycle = billingCycle || "monthly";
+    const qty = Number(quantity) > 0 ? Number(quantity) : 1;
+
+    // Calculate default next billing date if not provided
+    let computedNextDate: Date;
+    if (nextBillingDate) {
+      computedNextDate = new Date(nextBillingDate);
+    } else {
+      const now = new Date();
+      computedNextDate = new Date(now);
+      if (cycle === "weekly") {
+        computedNextDate.setDate(now.getDate() + 7);
+      } else if (cycle === "quarterly") {
+        computedNextDate.setMonth(now.getMonth() + 3);
+      } else if (cycle === "yearly") {
+        computedNextDate.setFullYear(now.getFullYear() + 1);
+      } else {
+        // default monthly
+        computedNextDate.setMonth(now.getMonth() + 1);
+      }
     }
 
     await connectDB();
@@ -71,10 +96,11 @@ export async function POST(req: NextRequest) {
       userId: auth.userId,
       name,
       amount: Number(amount),
-      billingCycle: billingCycle || "monthly",
+      quantity: qty,
+      billingCycle: cycle,
       category: category || "Subscriptions",
       accountId,
-      nextBillingDate: new Date(nextBillingDate),
+      nextBillingDate: computedNextDate,
       startDate: new Date(),
       status: "active",
       autoRenew: autoRenew !== undefined ? autoRenew : true,

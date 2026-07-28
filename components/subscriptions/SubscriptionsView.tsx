@@ -27,19 +27,18 @@ export default function SubscriptionsView({
   const [showAddModal, setShowAddModal] = useState(false);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [category, setCategory] = useState("Subscriptions");
   const [accountId, setAccountId] = useState(accounts.length > 0 ? accounts[0]._id : "");
-  const [nextBillingDate, setNextBillingDate] = useState(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-  );
+  const [nextBillingDate, setNextBillingDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleAddSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !amount || !accountId) {
-      setError("Please fill in name, amount, and payment account.");
+      setError("Please fill in service name, amount, and payment account.");
       return;
     }
 
@@ -53,10 +52,11 @@ export default function SubscriptionsView({
         body: JSON.stringify({
           name,
           amount: Number(amount),
+          quantity: Number(quantity) || 1,
           billingCycle,
           category,
           accountId,
-          nextBillingDate,
+          nextBillingDate: nextBillingDate || undefined,
         }),
       });
 
@@ -66,6 +66,8 @@ export default function SubscriptionsView({
       setShowAddModal(false);
       setName("");
       setAmount("");
+      setQuantity("1");
+      setNextBillingDate("");
       onRefresh();
     } catch (err: any) {
       setError(err.message);
@@ -80,7 +82,7 @@ export default function SubscriptionsView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
         <div>
           <h1 className="text-lg font-bold text-white tracking-tight">Subscriptions & Recurring</h1>
-          <p className="text-xs text-zinc-400">Track recurring software, services, membership renewals & alerts</p>
+          <p className="text-xs text-zinc-400">Track recurring software, services, membership renewals & multi-seat counts</p>
         </div>
 
         <button
@@ -113,6 +115,8 @@ export default function SubscriptionsView({
       {/* Subscriptions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {subscriptions.map((sub) => {
+          const qty = sub.quantity || 1;
+          const totalLineAmount = sub.amount * qty;
           const daysLeft = Math.ceil(
             (new Date(sub.nextBillingDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
           );
@@ -121,7 +125,14 @@ export default function SubscriptionsView({
             <div key={sub._id} className="ui-card p-4 flex flex-col justify-between space-y-3 ui-card-interactive">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">{sub.name}</h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold text-white">{sub.name}</h3>
+                    {qty > 1 && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-semibold font-mono border border-zinc-700">
+                        x{qty}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 uppercase font-semibold">
                       {sub.billingCycle}
@@ -130,7 +141,14 @@ export default function SubscriptionsView({
                   </div>
                 </div>
 
-                <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(sub.amount)}</span>
+                <div className="text-right">
+                  <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(totalLineAmount)}</span>
+                  {qty > 1 && (
+                    <span className="text-[10px] text-zinc-500 block font-mono">
+                      ({formatCurrency(sub.amount)} ea)
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="p-2.5 rounded bg-zinc-900/80 border border-zinc-800/80 space-y-1 text-xs">
@@ -204,23 +222,36 @@ export default function SubscriptionsView({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Netflix, Spotify"
+                  placeholder="e.g. Netflix, Cursor, Claude, Spotify"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full ui-input px-3 py-1.5 text-xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-300 mb-1">Amount ($)</label>
                   <input
                     type="number"
                     step="0.01"
                     required
-                    placeholder="19.99"
+                    placeholder="20.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
+                    className="w-full ui-input px-3 py-1.5 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1">Count (Qty)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    placeholder="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
                     className="w-full ui-input px-3 py-1.5 text-xs"
                   />
                 </div>
@@ -268,10 +299,12 @@ export default function SubscriptionsView({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Next Billing Date</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-zinc-300">Next Billing Date</label>
+                  <span className="text-[10px] text-zinc-500">(Optional - auto-calculates if blank)</span>
+                </div>
                 <input
                   type="date"
-                  required
                   value={nextBillingDate}
                   onChange={(e) => setNextBillingDate(e.target.value)}
                   className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"

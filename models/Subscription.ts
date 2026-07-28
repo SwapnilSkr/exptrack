@@ -4,6 +4,7 @@ export interface ISubscription extends Document {
   userId: mongoose.Types.ObjectId;
   name: string;
   amount: number;
+  quantity: number;
   currency: string;
   billingCycle: "weekly" | "monthly" | "quarterly" | "yearly";
   category: string;
@@ -23,6 +24,7 @@ const SubscriptionSchema: Schema<ISubscription> = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     name: { type: String, required: true, trim: true },
     amount: { type: Number, required: true },
+    quantity: { type: Number, default: 1, min: 1 },
     currency: { type: String, default: "USD" },
     billingCycle: {
       type: String,
