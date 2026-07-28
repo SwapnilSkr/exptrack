@@ -82,39 +82,25 @@ export default function AppShell({ children }: AppShellProps) {
     setDataLoading(true);
 
     try {
-      const [resAnalytics, resTx, resSub, resBudget, resAccounts] = await Promise.all([
-        fetch(`/api/analytics?timeframe=${timeframe}`),
-        fetch(`/api/transactions?timeframe=${timeframe}${filterType !== "all" ? `&type=${filterType}` : ""}${filterCategory !== "all" ? `&category=${filterCategory}` : ""}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ""}`),
-        fetch("/api/subscriptions"),
-        fetch("/api/budgets"),
-        fetch("/api/accounts"),
-      ]);
-
-      if (resAnalytics.ok) setAnalytics(await resAnalytics.json());
-      if (resTx.ok) {
-        const dTx = await resTx.json();
-        setTransactions(dTx.transactions || []);
-      }
-      if (resSub.ok) {
-        const dSub = await resSub.json();
-        setSubscriptions(dSub.subscriptions || []);
-        setSubMetrics(dSub.metrics || { totalMonthly: 0, totalYearly: 0, activeCount: 0 });
-      }
-      if (resBudget.ok) {
-        const dBudget = await resBudget.json();
-        setBudgets(dBudget.budgets || []);
-      }
-      if (resAccounts.ok) {
-        const dAcc = await resAccounts.json();
-        setAccounts(dAcc.accounts || []);
-        setTotalAccountBalance(dAcc.totalBalance || 0);
+      // Single unified bootstrap request for ultra-low latency & zero waterfall fetches
+      const res = await fetch(`/api/bootstrap?timeframe=${timeframe}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) setUser(data.user);
+        setAccounts(data.accounts || []);
+        setTotalAccountBalance(data.totalAccountBalance || 0);
+        setTransactions(data.transactions || []);
+        setSubscriptions(data.subscriptions || []);
+        setSubMetrics(data.subMetrics || { totalMonthly: 0, totalYearly: 0, activeCount: 0 });
+        setBudgets(data.budgets || []);
+        setAnalytics(data.analytics || null);
       }
     } catch (err) {
-      console.error("Error loading financial data:", err);
+      console.error("Error loading financial bootstrap data:", err);
     } finally {
       setDataLoading(false);
     }
-  }, [user, timeframe, filterType, filterCategory, searchQuery]);
+  }, [user, timeframe]);
 
   useEffect(() => {
     checkAuth();
