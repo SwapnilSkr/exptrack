@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, User, ArrowRight, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
+import { Lock, User, ArrowRight, ShieldCheck, Sparkles, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 interface AuthModalProps {
   onSuccess: () => void;
@@ -11,6 +11,7 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -154,13 +155,21 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
             <div className="relative">
               <Lock className="w-3.5 h-3.5 absolute left-3 top-3 text-zinc-500" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full ui-input pl-9 pr-3 py-2 text-xs"
+                className="w-full ui-input pl-9 pr-9 py-2 text-xs"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-200 transition-colors p-0.5 cursor-pointer"
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
             </div>
           </div>
 
