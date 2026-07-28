@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import Account from "@/models/Account";
+import User from "@/models/User";
+import { convertCurrency } from "@/lib/currency";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,11 +14,19 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
 
+    const user = await User.findById(auth.userId);
+    const targetCurrency = user?.currency || "USD";
+
     const accounts = await Account.find({ userId: auth.userId }).sort({ createdAt: 1 });
 
-    const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
+    // Compute converted total balance in target currency
+    const totalBalance = accounts.reduce((acc, currAccount) => {
+      const accCurrency = currAccount.currency || "USD";
+      const converted = convertCurrency(currAccount.balance, accCurrency, targetCurrency);
+      return acc + converted;
+    }, 0);
 
-    return NextResponse.json({ accounts, totalBalance });
+    return NextResponse.json({ accounts, totalBalance, currency: targetCurrency });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Fetch accounts failed" }, { status: 500 });
   }
@@ -30,13 +40,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, type, balance, color, icon } = body;
+    const { name, type, balance, color, icon, currency } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Account name is required" }, { status: 400 });
     }
 
     await connectDB();
+
+    const user = await User.findById(auth.userId);
 
     const account = await Account.create({
       userId: auth.userId,
@@ -45,6 +57,7 @@ export async function POST(req: NextRequest) {
       balance: Number(balance) || 0,
       color: color || "#3b82f6",
       icon: icon || "Landmark",
+      currency: currency || user?.currency || "USD",
     });
 
     return NextResponse.json({ success: true, account });

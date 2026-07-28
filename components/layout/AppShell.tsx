@@ -31,6 +31,7 @@ interface AppShellProps {
     onClearData: () => void;
     fetchData: () => void;
     userCurrency: string;
+    handleCurrencyChange: (newCurrency: string) => Promise<void>;
   }) => ReactNode;
 }
 
@@ -69,7 +70,7 @@ export default function AppShell({ children }: AppShellProps) {
       }
     } catch {
       setUser(null);
-    } fontally: {
+    } finally {
       setAuthChecked(true);
     }
   }, []);
@@ -125,13 +126,13 @@ export default function AppShell({ children }: AppShellProps) {
 
   const handleCurrencyChange = async (newCurrency: string) => {
     try {
+      setUser((prev: any) => (prev ? { ...prev, currency: newCurrency } : prev));
       const res = await fetch("/api/user/currency", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currency: newCurrency }),
       });
       if (res.ok) {
-        setUser((prev: any) => ({ ...prev, currency: newCurrency }));
         fetchData();
       }
     } catch (err) {
@@ -268,6 +269,7 @@ export default function AppShell({ children }: AppShellProps) {
           onClearData: handleClearData,
           fetchData,
           userCurrency,
+          handleCurrencyChange,
         })}
       </main>
 
