@@ -12,6 +12,11 @@ import {
   Menu,
   X,
   ChevronDown,
+  LayoutDashboard,
+  Receipt,
+  Repeat,
+  Target,
+  CreditCard,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -37,27 +42,19 @@ export default function Header({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { href: "/", label: "Dashboard" },
-    { href: "/transactions", label: "Transactions" },
-    { href: "/subscriptions", label: "Subscriptions" },
-    { href: "/budgets", label: "Budgets" },
-    { href: "/accounts", label: "Accounts" },
+    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/transactions", label: "Transactions", icon: Receipt },
+    { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
+    { href: "/budgets", label: "Budgets", icon: Target },
+    { href: "/accounts", label: "Accounts", icon: CreditCard },
   ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-[#09090b]">
-      {/* Container aligned exactly to max-w-7xl with px-4 sm:px-6 lg:px-8 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
-          {/* Brand Logo & Mobile Toggle */}
-          <div className="flex items-center gap-4 sm:gap-6">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-1 text-zinc-400 hover:text-white rounded border border-zinc-800 cursor-pointer"
-            >
-              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-            </button>
-
+        <div className="flex items-center justify-between h-13">
+          {/* Brand Logo */}
+          <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 shrink-0">
               <div className="w-6 h-6 rounded bg-white flex items-center justify-center text-zinc-950 font-bold text-xs">
                 <Wallet className="w-3.5 h-3.5" />
@@ -87,33 +84,34 @@ export default function Header({
           </div>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Net Worth Ticker */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Net Worth Ticker (Desktop / Tablet) */}
             <div className="hidden lg:flex items-center gap-1 text-xs">
               <span className="text-zinc-500 text-[11px]">Net Worth</span>
               <span className="font-semibold text-zinc-100 font-mono text-xs">{formatCurrency(netWorth)}</span>
             </div>
 
-            {/* Quick Add Button */}
+            {/* Quick Add Button - Full on Desktop, Icon-only on Mobile */}
             <button
               onClick={onOpenAddModal}
-              className="flex items-center gap-1 px-3 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer shrink-0"
+              title="Add Expense"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Expense</span>
+              <span className="hidden sm:inline">Expense</span>
             </button>
 
-            {/* User Profile Dropdown */}
+            {/* User Profile Avatar Dropdown */}
             <div className="relative shrink-0">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-1.5 p-1 rounded hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
-                title={user?.name || "User Account"}
+                className="flex items-center gap-1 p-1 rounded hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                title={user?.name || "Account Settings"}
               >
                 <div className="w-6 h-6 rounded-full bg-zinc-800 text-zinc-200 flex items-center justify-center font-semibold text-[10px] border border-zinc-700">
                   {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                 </div>
-                <ChevronDown className="w-3 h-3 text-zinc-500" />
+                <ChevronDown className="w-3 h-3 text-zinc-500 hidden sm:block" />
               </button>
 
               {showUserMenu && (
@@ -160,28 +158,39 @@ export default function Header({
                 </div>
               )}
             </div>
+
+            {/* Mobile Hamburger Toggle Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-1.5 text-zinc-400 hover:text-white rounded border border-zinc-800 cursor-pointer"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-2 border-t border-zinc-800 space-y-1">
+          <div className="md:hidden py-3 border-t border-zinc-800 space-y-1 animate-in fade-in duration-150">
             {navItems.map((item) => {
+              const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`w-full flex items-center px-3 py-2 rounded text-xs font-medium transition-colors ${
-                    isActive ? "bg-zinc-800 text-white font-medium" : "text-zinc-400 hover:text-white"
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition-colors ${
+                    isActive ? "bg-zinc-800 text-white font-medium" : "text-zinc-400 hover:text-white hover:bg-zinc-900/60"
                   }`}
                 >
+                  <Icon className="w-4 h-4 text-zinc-400" />
                   {item.label}
                 </Link>
               );
             })}
-            <div className="pt-2 border-t border-zinc-800 flex items-center justify-between px-3 text-xs text-zinc-400">
+
+            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between px-3 text-xs text-zinc-400">
               <span>Net Worth</span>
               <span className="font-semibold text-zinc-100 font-mono">{formatCurrency(netWorth)}</span>
             </div>
