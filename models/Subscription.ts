@@ -25,7 +25,7 @@ const SubscriptionSchema: Schema<ISubscription> = new Schema(
     name: { type: String, required: true, trim: true },
     amount: { type: Number, required: true },
     quantity: { type: Number, default: 1, min: 1 },
-    currency: { type: String, default: "USD" },
+    currency: { type: String, default: "INR" },
     billingCycle: {
       type: String,
       enum: ["weekly", "monthly", "quarterly", "yearly"],

@@ -25,7 +25,7 @@ const TransactionSchema: Schema<ITransaction> = new Schema(
     type: { type: String, enum: ["expense", "income", "transfer"], required: true },
     title: { type: String, required: true, trim: true },
     amount: { type: Number, required: true },
-    currency: { type: String, default: "USD" },
+    currency: { type: String, default: "INR" },
     category: { type: String, required: true, default: "General" },
     accountId: { type: Schema.Types.ObjectId, ref: "Account", required: true },
     toAccountId: { type: Schema.Types.ObjectId, ref: "Account" },

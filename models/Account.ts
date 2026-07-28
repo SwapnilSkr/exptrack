@@ -7,7 +7,7 @@ export interface IAccount extends Document {
   balance: number;
   currency: string;
   color: string;
-  icon: string;
+  icon?: string;
   isSample?: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -23,7 +23,7 @@ const AccountSchema: Schema<IAccount> = new Schema(
       default: "checking",
     },
     balance: { type: Number, default: 0 },
-    currency: { type: String, default: "USD" },
+    currency: { type: String, default: "INR" },
     color: { type: String, default: "#3b82f6" },
     icon: { type: String, default: "Landmark" },
     isSample: { type: Boolean, default: false },
@@ -31,5 +31,6 @@ const AccountSchema: Schema<IAccount> = new Schema(
   { timestamps: true }
 );
 
-const Account: Model<IAccount> = mongoose.models.Account || mongoose.model<IAccount>("Account", AccountSchema);
+const Account: Model<IAccount> =
+  mongoose.models.Account || mongoose.model<IAccount>("Account", AccountSchema);
 export default Account;

@@ -229,7 +229,7 @@ export default function AppShell({ children }: AppShellProps) {
     return <AuthModal onSuccess={checkAuth} />;
   }
 
-  const userCurrency = user.currency || "USD";
+  const userCurrency = user.currency || "INR";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#09090b] text-zinc-100 selection:bg-zinc-800 selection:text-white">

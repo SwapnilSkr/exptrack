@@ -45,7 +45,7 @@ export default function Header({
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const selectedCurrency = user?.currency || "USD";
+  const selectedCurrency = user?.currency || "INR";
   const currencies = ["USD", "EUR", "GBP", "INR", "CAD", "AUD", "JPY"];
 
   const navItems = [

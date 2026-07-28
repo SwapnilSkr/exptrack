@@ -6,32 +6,32 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const currencySymbols: Record<string, string> = {
+  INR: "₹",
   USD: "$",
   EUR: "€",
   GBP: "£",
-  INR: "₹",
   CAD: "C$",
   AUD: "A$",
   JPY: "¥",
   CHF: "CHF",
 };
 
-export function formatCurrency(amount: number, currency: string = "USD"): string {
+export function formatCurrency(amount: number, currency: string = "INR"): string {
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    const symbol = currencySymbols[currency] || "$";
+    const symbol = currencySymbols[currency] || "₹";
     return `${symbol}${amount.toFixed(2)}`;
   }
 }
 
 export function formatDate(date: string | Date): string {
-  return new Date(date).toLocaleDateString("en-US", {
+  return new Date(date).toLocaleDateString("en-IN", {
     month: "short",
     day: "numeric",
     year: "numeric",

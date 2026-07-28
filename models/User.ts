@@ -16,7 +16,7 @@ const UserSchema: Schema<IUser> = new Schema(
     passwordHash: { type: String, required: true },
     name: { type: String, required: true },
     avatarUrl: { type: String, default: "" },
-    currency: { type: String, default: "USD" },
+    currency: { type: String, default: "INR" },
   },
   { timestamps: true }
 );

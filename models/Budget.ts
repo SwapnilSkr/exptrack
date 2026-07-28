@@ -16,7 +16,7 @@ const BudgetSchema: Schema<IBudget> = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     category: { type: String, required: true },
     monthlyLimit: { type: Number, required: true },
-    currency: { type: String, default: "USD" },
+    currency: { type: String, default: "INR" },
     period: { type: String, enum: ["monthly", "yearly"], default: "monthly" },
     isSample: { type: Boolean, default: false },
   },
