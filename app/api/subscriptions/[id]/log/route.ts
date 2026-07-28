@@ -17,6 +17,17 @@ export async function POST(
     }
 
     const { id } = await params;
+    let mode: "all" | "single" = "all";
+    let seatCount = 1;
+
+    try {
+      const body = await req.json();
+      if (body.mode) mode = body.mode;
+      if (body.seatCount) seatCount = Number(body.seatCount);
+    } catch {
+      // default mode 'all'
+    }
+
     await connectDB();
 
     const sub = await Subscription.findOne({ _id: id, userId: auth.userId }).populate("accountId");
@@ -24,12 +35,20 @@ export async function POST(
       return NextResponse.json({ error: "Subscription not found" }, { status: 404 });
     }
 
-    const qty = sub.quantity || 1;
-    const totalAmount = sub.amount * qty;
-    const itemTitle = qty > 1 ? `${sub.name} (x${qty}) Subscription` : `${sub.name} Subscription`;
+    const totalSeats = sub.quantity || 1;
+    const countToLog = mode === "single" ? Math.min(seatCount, totalSeats) : totalSeats;
+    const totalAmount = sub.amount * countToLog;
+
+    const itemTitle =
+      totalSeats > 1
+        ? mode === "single"
+          ? `${sub.name} (1 Seat)`
+          : `${sub.name} (x${totalSeats} Seats)`
+        : `${sub.name} Subscription`;
+
     const resolvedCurrency = sub.currency || (sub.accountId as any)?.currency || "USD";
 
-    // 1. Create Posted Expense Transaction with matching subscription currency
+    // 1. Create Posted Expense Transaction
     const transaction = await Transaction.create({
       userId: auth.userId,
       title: itemTitle,
@@ -39,9 +58,9 @@ export async function POST(
       category: sub.category || "Subscriptions",
       accountId: sub.accountId,
       date: sub.nextBillingDate || new Date(),
-      tags: ["Subscription", sub.name.toLowerCase()],
+      tags: ["Subscription", sub.name.toLowerCase(), mode === "single" ? "SingleSeat" : "AllSeats"],
       paymentMethod: "Auto-Pay",
-      notes: `Logged automatically from recurring subscription ${sub.name} (qty: ${qty})`,
+      notes: `Logged ${mode === "single" ? "1 seat" : `all ${totalSeats} seats`} for recurring subscription ${sub.name}`,
       subscriptionId: sub._id,
     });
 
@@ -52,24 +71,25 @@ export async function POST(
       await account.save();
     }
 
-    // 3. Advance Next Billing Date
-    const nextDate = new Date(sub.nextBillingDate || Date.now());
-    if (sub.billingCycle === "weekly") {
-      nextDate.setDate(nextDate.getDate() + 7);
-    } else if (sub.billingCycle === "monthly") {
-      nextDate.setMonth(nextDate.getMonth() + 1);
-    } else if (sub.billingCycle === "quarterly") {
-      nextDate.setMonth(nextDate.getMonth() + 3);
-    } else if (sub.billingCycle === "yearly") {
-      nextDate.setFullYear(nextDate.getFullYear() + 1);
+    // 3. Advance Next Billing Date (full cycle if 'all', proportional if 'single')
+    if (mode === "all" || totalSeats === 1) {
+      const nextDate = new Date(sub.nextBillingDate || Date.now());
+      if (sub.billingCycle === "weekly") {
+        nextDate.setDate(nextDate.getDate() + 7);
+      } else if (sub.billingCycle === "monthly") {
+        nextDate.setMonth(nextDate.getMonth() + 1);
+      } else if (sub.billingCycle === "quarterly") {
+        nextDate.setMonth(nextDate.getMonth() + 3);
+      } else if (sub.billingCycle === "yearly") {
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+      }
+      sub.nextBillingDate = nextDate;
+      await sub.save();
     }
-
-    sub.nextBillingDate = nextDate;
-    await sub.save();
 
     return NextResponse.json({
       success: true,
-      message: `Expense logged for ${sub.name} (${formatCurrency(totalAmount, resolvedCurrency)}). Next renewal set to ${nextDate.toISOString().split("T")[0]}`,
+      message: `Logged ${mode === "single" ? "1 seat" : `all ${totalSeats} seats`} for ${sub.name} (${formatCurrency(totalAmount, resolvedCurrency)}).`,
       transaction,
       subscription: sub,
     });

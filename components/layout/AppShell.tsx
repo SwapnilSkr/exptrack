@@ -26,8 +26,8 @@ interface AppShellProps {
     setSearchQuery: (query: string) => void;
     onOpenAddModal: (tx?: any) => void;
     onDeleteTransaction: (id: string) => void;
-    onLogSubscription: (subId: string) => void;
-    onDelogSubscription: (subId: string) => void;
+    onLogSubscription: (subId: string, mode?: "all" | "single") => void;
+    onDelogSubscription: (subId: string, mode?: "all" | "single") => void;
     onDeleteSubscription: (id: string) => void;
     onSeedData: () => void;
     onClearData: () => void;
@@ -151,9 +151,13 @@ export default function AppShell({ children }: AppShellProps) {
     }
   };
 
-  const handleLogSubscription = async (subId: string) => {
+  const handleLogSubscription = async (subId: string, mode: "all" | "single" = "all") => {
     try {
-      const res = await fetch(`/api/subscriptions/${subId}/log`, { method: "POST" });
+      const res = await fetch(`/api/subscriptions/${subId}/log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
       const data = await res.json();
       if (res.ok) {
         fetchData();
@@ -165,9 +169,13 @@ export default function AppShell({ children }: AppShellProps) {
     }
   };
 
-  const handleDelogSubscription = async (subId: string) => {
+  const handleDelogSubscription = async (subId: string, mode: "all" | "single" = "all") => {
     try {
-      const res = await fetch(`/api/subscriptions/${subId}/delog`, { method: "POST" });
+      const res = await fetch(`/api/subscriptions/${subId}/delog`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
       const data = await res.json();
       if (res.ok) {
         fetchData();

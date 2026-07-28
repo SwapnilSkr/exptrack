@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Repeat, Plus, Zap, Trash2, Edit2, PauseCircle, PlayCircle, Undo2 } from "lucide-react";
+import { Repeat, Plus, Zap, Trash2, Edit2, PauseCircle, PlayCircle, Undo2, Layers } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
 import Dialog from "@/components/ui/Dialog";
@@ -11,8 +11,8 @@ interface SubscriptionsViewProps {
   subscriptions: any[];
   metrics: { totalMonthly: number; totalYearly: number; activeCount: number };
   accounts: any[];
-  onLogSubscription: (id: string) => void;
-  onDelogSubscription?: (id: string) => void;
+  onLogSubscription: (id: string, mode?: "all" | "single") => void;
+  onDelogSubscription?: (id: string, mode?: "all" | "single") => void;
   onDeleteSubscription: (id: string) => void;
   onRefresh: () => void;
   onSeedData?: () => void;
@@ -33,9 +33,10 @@ export default function SubscriptionsView({
   const [showModal, setShowModal] = useState(false);
   const [editingSub, setEditingSub] = useState<any>(null);
 
-  // Confirm dialogs state
+  // Confirm / Action dialog states
   const [deleteSubId, setDeleteSubId] = useState<string | null>(null);
-  const [delogSubId, setDelogSubId] = useState<string | null>(null);
+  const [targetLogSub, setTargetLogSub] = useState<any | null>(null);
+  const [targetDelogSub, setTargetDelogSub] = useState<any | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const [name, setName] = useState("");
@@ -151,23 +152,50 @@ export default function SubscriptionsView({
     }
   };
 
+  const handleLogClick = (sub: any) => {
+    if ((sub.quantity || 1) > 1) {
+      setTargetLogSub(sub);
+    } else {
+      onLogSubscription(sub._id, "all");
+    }
+  };
+
+  const handleDelogClick = (sub: any) => {
+    if ((sub.quantity || 1) > 1) {
+      setTargetDelogSub(sub);
+    } else if (onDelogSubscription) {
+      onDelogSubscription(sub._id, "all");
+    }
+  };
+
+  const executeLogChoice = async (mode: "all" | "single") => {
+    if (!targetLogSub) return;
+    setActionLoading(true);
+    try {
+      await onLogSubscription(targetLogSub._id, mode);
+      setTargetLogSub(null);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const executeDelogChoice = async (mode: "all" | "single") => {
+    if (!targetDelogSub || !onDelogSubscription) return;
+    setActionLoading(true);
+    try {
+      await onDelogSubscription(targetDelogSub._id, mode);
+      setTargetDelogSub(null);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const confirmExecuteDelete = async () => {
     if (!deleteSubId) return;
     setActionLoading(true);
     try {
       await onDeleteSubscription(deleteSubId);
       setDeleteSubId(null);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const confirmExecuteDelog = async () => {
-    if (!delogSubId || !onDelogSubscription) return;
-    setActionLoading(true);
-    try {
-      await onDelogSubscription(delogSubId);
-      setDelogSubId(null);
     } finally {
       setActionLoading(false);
     }
@@ -189,7 +217,7 @@ export default function SubscriptionsView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
         <div>
           <h1 className="text-lg font-bold text-white tracking-tight">Subscriptions & Recurring</h1>
-          <p className="text-xs text-zinc-400">Track recurring software, services, membership renewals, logging & delogging</p>
+          <p className="text-xs text-zinc-400">Track recurring software, multi-seat accounts, single/all seat logging & delogging</p>
         </div>
 
         <button
@@ -242,8 +270,9 @@ export default function SubscriptionsView({
                   <div className="flex items-center gap-1.5">
                     <h3 className="text-sm font-semibold text-white">{sub.name}</h3>
                     {qty > 1 && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-semibold font-mono border border-zinc-700">
-                        x{qty}
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-semibold font-mono border border-zinc-700 flex items-center gap-1">
+                        <Layers className="w-3 h-3 text-zinc-400" />
+                        x{qty} Seats
                       </span>
                     )}
                     {isPaused && (
@@ -264,7 +293,7 @@ export default function SubscriptionsView({
                   <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(totalLineAmount, subCurrency)}</span>
                   {qty > 1 && (
                     <span className="text-[10px] text-zinc-500 block font-mono">
-                      ({formatCurrency(sub.amount, subCurrency)} ea)
+                      ({formatCurrency(sub.amount, subCurrency)} / seat)
                     </span>
                   )}
                 </div>
@@ -304,9 +333,9 @@ export default function SubscriptionsView({
                   </button>
 
                   <button
-                    onClick={() => onLogSubscription(sub._id)}
+                    onClick={() => handleLogClick(sub)}
                     className="flex items-center gap-1 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium cursor-pointer transition-colors"
-                    title="Log Expense Now"
+                    title="Log Expense"
                   >
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
                     Log
@@ -314,7 +343,7 @@ export default function SubscriptionsView({
 
                   {onDelogSubscription && (
                     <button
-                      onClick={() => setDelogSubId(sub._id)}
+                      onClick={() => handleDelogClick(sub)}
                       className="flex items-center gap-1 px-1.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-amber-400 text-xs font-medium cursor-pointer transition-colors"
                       title="Undo Log / Delog Expense"
                     >
@@ -355,12 +384,92 @@ export default function SubscriptionsView({
         />
       )}
 
+      {/* Multi-Seat Log Choice Shadcn Dialog */}
+      <Dialog
+        isOpen={Boolean(targetLogSub)}
+        onClose={() => setTargetLogSub(null)}
+        title={`Log Subscription Expense: ${targetLogSub?.name}`}
+        description={`This subscription has ${targetLogSub?.quantity || 1} seat licenses. Select whether to log an individual seat or all seats.`}
+      >
+        {targetLogSub && (
+          <div className="space-y-3 pt-1">
+            <button
+              onClick={() => executeLogChoice("single")}
+              disabled={actionLoading}
+              className="w-full p-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 flex items-center justify-between text-left cursor-pointer transition-colors"
+            >
+              <div>
+                <span className="text-xs font-bold text-white block">Log 1 Individual Seat</span>
+                <span className="text-[11px] text-zinc-400">Log single seat expense entry</span>
+              </div>
+              <span className="text-xs font-bold font-mono text-emerald-400">
+                {formatCurrency(targetLogSub.amount, targetLogSub.currency || userCurrency)}
+              </span>
+            </button>
+
+            <button
+              onClick={() => executeLogChoice("all")}
+              disabled={actionLoading}
+              className="w-full p-3 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 flex items-center justify-between text-left cursor-pointer transition-colors"
+            >
+              <div>
+                <span className="text-xs font-bold block">Log All {targetLogSub.quantity} Seats Collectively</span>
+                <span className="text-[11px] text-zinc-600">Log full subscription expense & advance renewal date</span>
+              </div>
+              <span className="text-xs font-bold font-mono text-zinc-950">
+                {formatCurrency(targetLogSub.amount * targetLogSub.quantity, targetLogSub.currency || userCurrency)}
+              </span>
+            </button>
+          </div>
+        )}
+      </Dialog>
+
+      {/* Multi-Seat Delog Choice Shadcn Dialog */}
+      <Dialog
+        isOpen={Boolean(targetDelogSub)}
+        onClose={() => setTargetDelogSub(null)}
+        title={`Undo / Delog Subscription: ${targetDelogSub?.name}`}
+        description={`Select whether to delog 1 seat expense or delog all ${targetDelogSub?.quantity || 1} seats collectively.`}
+      >
+        {targetDelogSub && (
+          <div className="space-y-3 pt-1">
+            <button
+              onClick={() => executeDelogChoice("single")}
+              disabled={actionLoading}
+              className="w-full p-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 flex items-center justify-between text-left cursor-pointer transition-colors"
+            >
+              <div>
+                <span className="text-xs font-bold text-white block">Undo / Delog 1 Seat</span>
+                <span className="text-[11px] text-zinc-400">Refund 1 seat amount to wallet balance</span>
+              </div>
+              <span className="text-xs font-bold font-mono text-amber-400">
+                +{formatCurrency(targetDelogSub.amount, targetDelogSub.currency || userCurrency)}
+              </span>
+            </button>
+
+            <button
+              onClick={() => executeDelogChoice("all")}
+              disabled={actionLoading}
+              className="w-full p-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 flex items-center justify-between text-left cursor-pointer transition-colors"
+            >
+              <div>
+                <span className="text-xs font-bold text-amber-400 block">Undo / Delog All {targetDelogSub.quantity} Seats</span>
+                <span className="text-[11px] text-amber-300/80">Refund full amount & roll back renewal date</span>
+              </div>
+              <span className="text-xs font-bold font-mono text-amber-400">
+                +{formatCurrency(targetDelogSub.amount * targetDelogSub.quantity, targetDelogSub.currency || userCurrency)}
+              </span>
+            </button>
+          </div>
+        )}
+      </Dialog>
+
       {/* Add / Edit Subscription Modal using Shadcn Dialog */}
       <Dialog
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title={editingSub ? "Edit Subscription" : "Add Subscription"}
-        description="Manage service pricing, billing cycle, count, and payment account."
+        description="Manage service pricing, billing cycle, seat count, and payment account."
       >
         {error && <div className="p-2.5 rounded bg-rose-500/10 text-rose-400 text-xs mb-3">{error}</div>}
 
@@ -493,7 +602,7 @@ export default function SubscriptionsView({
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white cursor-pointer"
+              className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
             >
               Cancel
             </button>
@@ -517,18 +626,6 @@ export default function SubscriptionsView({
         description="Are you sure you want to delete this subscription from your watchlist? Your past logged transaction entries will not be deleted."
         confirmLabel="Delete Subscription"
         variant="danger"
-        isLoading={actionLoading}
-      />
-
-      {/* Delog Subscription Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={Boolean(delogSubId)}
-        onClose={() => setDelogSubId(null)}
-        onConfirm={confirmExecuteDelog}
-        title="Undo / Delog Subscription Expense?"
-        description="This will delete the auto-logged subscription transaction entry, add the funds back to your wallet balance, and roll back the next renewal billing date by 1 cycle."
-        confirmLabel="Undo / Delog Expense"
-        variant="warning"
         isLoading={actionLoading}
       />
     </div>
