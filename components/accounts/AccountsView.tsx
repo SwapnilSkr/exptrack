@@ -77,28 +77,28 @@ export default function AccountsView({ accounts, totalBalance, onRefresh, onSeed
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight">Wallets & Accounts</h2>
+          <h1 className="text-lg font-bold text-white tracking-tight">Wallets & Accounts</h1>
           <p className="text-xs text-zinc-400">Manage checking, savings, credit cards, and cash wallets</p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium cursor-pointer self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           Add Wallet
         </button>
       </div>
 
       {/* Net Balance Header Card */}
-      <div className="ui-card p-5 flex items-center justify-between">
+      <div className="ui-card p-4 flex items-center justify-between">
         <div>
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Combined Total Balance</span>
-          <h3 className="text-2xl font-bold text-white mt-1">{formatCurrency(totalBalance)}</h3>
+          <h3 className="text-2xl font-bold font-mono text-zinc-100 mt-0.5">{formatCurrency(totalBalance)}</h3>
         </div>
       </div>
 
@@ -108,13 +108,10 @@ export default function AccountsView({ accounts, totalBalance, onRefresh, onSeed
           const Icon = getAccountIcon(acc.type);
 
           return (
-            <div key={acc._id} className="ui-card p-4 flex flex-col justify-between space-y-3">
+            <div key={acc._id} className="ui-card p-4 flex flex-col justify-between space-y-3 ui-card-interactive">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-8 h-8 rounded-md flex items-center justify-center text-white font-bold"
-                    style={{ backgroundColor: acc.color || "#2563eb" }}
-                  >
+                  <div className="w-8 h-8 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
@@ -132,8 +129,8 @@ export default function AccountsView({ accounts, totalBalance, onRefresh, onSeed
               </div>
 
               <div>
-                <span className="text-[11px] text-zinc-500">Current Balance</span>
-                <h4 className={`text-xl font-bold mt-0.5 ${acc.balance < 0 ? "text-rose-400" : "text-white"}`}>
+                <span className="text-[11px] text-zinc-400">Current Balance</span>
+                <h4 className={`text-xl font-bold font-mono mt-0.5 ${acc.balance < 0 ? "text-rose-400" : "text-zinc-100"}`}>
                   {formatCurrency(acc.balance)}
                 </h4>
               </div>
@@ -170,7 +167,7 @@ export default function AccountsView({ accounts, totalBalance, onRefresh, onSeed
                   placeholder="Chase Checking, Amex Gold"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 rounded-md text-xs"
+                  className="w-full ui-input px-3 py-1.5 text-xs"
                 />
               </div>
 
@@ -180,7 +177,7 @@ export default function AccountsView({ accounts, totalBalance, onRefresh, onSeed
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 rounded-md text-xs cursor-pointer"
+                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
                   >
                     <option value="checking">Checking</option>
                     <option value="savings">Savings</option>
@@ -199,21 +196,8 @@ export default function AccountsView({ accounts, totalBalance, onRefresh, onSeed
                     placeholder="0.00"
                     value={balance}
                     onChange={(e) => setBalance(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 rounded-md text-xs"
+                    className="w-full ui-input px-3 py-1.5 text-xs"
                   />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Badge Accent Color</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-8 h-8 rounded border-none cursor-pointer bg-transparent"
-                  />
-                  <span className="text-xs text-zinc-400">{color}</span>
                 </div>
               </div>
 
@@ -228,7 +212,7 @@ export default function AccountsView({ accounts, totalBalance, onRefresh, onSeed
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium"
+                  className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold"
                 >
                   {loading ? "Adding..." : "Add Wallet"}
                 </button>

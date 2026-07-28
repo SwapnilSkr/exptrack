@@ -49,21 +49,21 @@ export default function Header({
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-14">
+    <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-[#09090b]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-13">
           {/* Left Brand Logo & Mobile Toggle */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-1.5 text-zinc-400 hover:text-white rounded-lg border border-zinc-800"
+              className="md:hidden p-1 text-zinc-400 hover:text-white rounded border border-zinc-800"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
 
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-zinc-100 flex items-center justify-center text-zinc-950 font-semibold text-sm">
-                <Wallet className="w-4 h-4" />
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-white flex items-center justify-center text-zinc-950 font-bold text-xs">
+                <Wallet className="w-3.5 h-3.5" />
               </div>
               <span className="text-sm font-semibold text-white tracking-tight">ExpTrack</span>
             </Link>
@@ -78,10 +78,10 @@ export default function Header({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${
                     isActive
-                      ? "bg-zinc-800 text-white font-semibold"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                      ? "bg-zinc-800 text-white font-medium"
+                      : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -92,19 +92,19 @@ export default function Header({
           </nav>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             {/* Net Worth Ticker */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-xs">
-              <span className="text-zinc-500 text-[11px]">Net Worth</span>
-              <span className="font-semibold text-emerald-400">{formatCurrency(netWorth)}</span>
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-xs">
+              <span className="text-zinc-400 text-[11px]">Net Worth</span>
+              <span className="font-semibold text-zinc-100 font-mono">{formatCurrency(netWorth)}</span>
             </div>
 
             {/* Quick Add Button */}
             <button
               onClick={onOpenAddModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors shadow-xs cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Add Expense</span>
             </button>
 
@@ -112,19 +112,19 @@ export default function Header({
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs transition-colors cursor-pointer"
               >
-                <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-white font-semibold text-[11px]">
+                <div className="w-5 h-5 rounded-full bg-zinc-800 text-zinc-200 flex items-center justify-center font-semibold text-[10px]">
                   {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                 </div>
-                <span className="font-medium hidden md:inline">{user?.name}</span>
+                <span className="font-medium text-xs hidden md:inline text-zinc-300">{user?.name}</span>
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-52 ui-modal rounded-lg shadow-xl border border-zinc-800 py-1.5 z-50">
-                  <div className="px-3 py-2 border-b border-zinc-800">
+                <div className="absolute right-0 mt-1.5 w-48 ui-modal rounded-md border border-zinc-800 py-1 z-50">
+                  <div className="px-3 py-1.5 border-b border-zinc-800">
                     <p className="text-xs font-medium text-white">{user?.name}</p>
-                    <p className="text-[11px] text-zinc-500">@{user?.username}</p>
+                    <p className="text-[10px] text-zinc-500">@{user?.username}</p>
                   </div>
 
                   <button
@@ -135,7 +135,7 @@ export default function Header({
                     className="w-full px-3 py-1.5 text-left text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    Load Sample Data
+                    Load Demo Data
                   </button>
 
                   <button
@@ -146,7 +146,7 @@ export default function Header({
                     className="w-full px-3 py-1.5 text-left text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center gap-2 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5 text-amber-400" />
-                    Clear Sample / All Data
+                    Clear All Data
                   </button>
 
                   <div className="border-t border-zinc-800 mt-1 pt-1">
@@ -155,7 +155,7 @@ export default function Header({
                         setShowUserMenu(false);
                         onLogout();
                       }}
-                      className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-red-500/10 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3 py-1.5 text-left text-xs text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       Sign Out
@@ -169,7 +169,7 @@ export default function Header({
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-3 border-t border-zinc-800 space-y-1">
+          <div className="md:hidden py-2 border-t border-zinc-800 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -178,11 +178,11 @@ export default function Header({
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                    isActive ? "bg-zinc-800 text-white font-semibold" : "text-zinc-400 hover:text-white"
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    isActive ? "bg-zinc-800 text-white font-medium" : "text-zinc-400 hover:text-white"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3.5 h-3.5" />
                   {item.label}
                 </Link>
               );

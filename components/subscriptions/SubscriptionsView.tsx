@@ -75,38 +75,38 @@ export default function SubscriptionsView({
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header & Metrics */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Header & Primary CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800/60 pb-4">
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight">Subscriptions & Recurring</h2>
+          <h1 className="text-lg font-bold text-white tracking-tight">Subscriptions & Recurring</h1>
           <p className="text-xs text-zinc-400">Track recurring software, services, membership renewals & alerts</p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors shadow-xs cursor-pointer self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           Add Subscription
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      {/* Summary Cards Banner */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="ui-card p-4">
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Monthly Commitment</span>
-          <h3 className="text-xl font-bold text-purple-400 mt-1">{formatCurrency(metrics.totalMonthly || 0)}</h3>
+          <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalMonthly || 0)}</h3>
         </div>
 
         <div className="ui-card p-4">
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Annual Commitment</span>
-          <h3 className="text-xl font-bold text-blue-400 mt-1">{formatCurrency(metrics.totalYearly || 0)}</h3>
+          <h3 className="text-xl font-bold font-mono text-zinc-100 mt-1">{formatCurrency(metrics.totalYearly || 0)}</h3>
         </div>
 
         <div className="ui-card p-4">
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Active Services</span>
-          <h3 className="text-xl font-bold text-emerald-400 mt-1">{metrics.activeCount || 0} Active</h3>
+          <h3 className="text-xl font-bold text-zinc-100 mt-1">{metrics.activeCount || 0} Active</h3>
         </div>
       </div>
 
@@ -118,10 +118,10 @@ export default function SubscriptionsView({
           );
 
           return (
-            <div key={sub._id} className="ui-card p-4 flex flex-col justify-between space-y-3">
+            <div key={sub._id} className="ui-card p-4 flex flex-col justify-between space-y-3 ui-card-interactive">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-white">{sub.name}</h3>
+                  <h3 className="text-sm font-semibold text-white">{sub.name}</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 uppercase font-semibold">
                       {sub.billingCycle}
@@ -130,10 +130,10 @@ export default function SubscriptionsView({
                   </div>
                 </div>
 
-                <span className="text-sm font-bold text-purple-300">{formatCurrency(sub.amount)}</span>
+                <span className="text-sm font-bold font-mono text-zinc-100">{formatCurrency(sub.amount)}</span>
               </div>
 
-              <div className="p-2.5 rounded-md bg-zinc-900 border border-zinc-800 space-y-1 text-xs">
+              <div className="p-2.5 rounded bg-zinc-900/80 border border-zinc-800/80 space-y-1 text-xs">
                 <div className="flex justify-between text-zinc-400">
                   <span>Next Billing:</span>
                   <span className="text-zinc-200 font-medium">{formatDate(sub.nextBillingDate)}</span>
@@ -146,12 +146,12 @@ export default function SubscriptionsView({
 
               <div className="flex items-center justify-between pt-1">
                 <span
-                  className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded ${
                     daysLeft <= 3
                       ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                       : daysLeft <= 7
                       ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                      : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "bg-zinc-800 text-zinc-300 border border-zinc-700"
                   }`}
                 >
                   {daysLeft <= 0 ? "Due Today" : `${daysLeft} Days Left`}
@@ -160,15 +160,15 @@ export default function SubscriptionsView({
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => onLogSubscription(sub._id)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium cursor-pointer transition-colors"
                   >
-                    <Zap className="w-3.5 h-3.5" />
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
                     Log Expense
                   </button>
 
                   <button
                     onClick={() => onDeleteSubscription(sub._id)}
-                    className="p-1 rounded text-zinc-400 hover:text-rose-400 cursor-pointer"
+                    className="p-1 rounded text-zinc-500 hover:text-rose-400 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -183,7 +183,7 @@ export default function SubscriptionsView({
         <EmptyState
           icon={Repeat}
           title="No Active Subscriptions Tracked"
-          description="Keep track of your monthly SaaS tools, memberships, streaming services, and auto-renewals."
+          description="Keep track of your monthly software services, streaming memberships, and recurring billing renewals."
           actionLabel="+ Add Subscription"
           onAction={() => setShowAddModal(true)}
           onSecondaryAction={onSeedData}
@@ -207,7 +207,7 @@ export default function SubscriptionsView({
                   placeholder="e.g. Netflix, Spotify"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 rounded-md text-xs"
+                  className="w-full ui-input px-3 py-1.5 text-xs"
                 />
               </div>
 
@@ -221,7 +221,7 @@ export default function SubscriptionsView({
                     placeholder="19.99"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 rounded-md text-xs"
+                    className="w-full ui-input px-3 py-1.5 text-xs"
                   />
                 </div>
 
@@ -230,7 +230,7 @@ export default function SubscriptionsView({
                   <select
                     value={billingCycle}
                     onChange={(e) => setBillingCycle(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 rounded-md text-xs cursor-pointer"
+                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
                   >
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
@@ -247,7 +247,7 @@ export default function SubscriptionsView({
                     type="text"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 rounded-md text-xs"
+                    className="w-full ui-input px-3 py-1.5 text-xs"
                   />
                 </div>
 
@@ -256,7 +256,7 @@ export default function SubscriptionsView({
                   <select
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full ui-input px-3 py-1.5 rounded-md text-xs cursor-pointer"
+                    className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
                   >
                     {accounts.map((acc) => (
                       <option key={acc._id} value={acc._id}>
@@ -274,7 +274,7 @@ export default function SubscriptionsView({
                   required
                   value={nextBillingDate}
                   onChange={(e) => setNextBillingDate(e.target.value)}
-                  className="w-full ui-input px-3 py-1.5 rounded-md text-xs cursor-pointer"
+                  className="w-full ui-input px-3 py-1.5 text-xs cursor-pointer"
                 />
               </div>
 
@@ -289,7 +289,7 @@ export default function SubscriptionsView({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium"
+                  className="px-4 py-1.5 rounded bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold"
                 >
                   {loading ? "Adding..." : "Add Subscription"}
                 </button>
