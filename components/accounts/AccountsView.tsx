@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Landmark, PiggyBank, Wallet, Plus, Trash2, Edit2, Check } from "lucide-react";
+import { CreditCard, Landmark, PiggyBank, Wallet, Plus, Trash2, Edit2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -11,6 +11,7 @@ interface AccountsViewProps {
   onRefresh: () => void;
   onSeedData?: () => void;
   userCurrency?: string;
+  onCurrencyChange?: (currency: string) => void;
 }
 
 export default function AccountsView({
@@ -19,6 +20,7 @@ export default function AccountsView({
   onRefresh,
   onSeedData,
   userCurrency = "USD",
+  onCurrencyChange,
 }: AccountsViewProps) {
   const [showModal, setShowModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
@@ -80,6 +82,11 @@ export default function AccountsView({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save account");
 
+      // Auto-sync global user currency preference when setting/editing account currency
+      if (currency && currency !== userCurrency && onCurrencyChange) {
+        onCurrencyChange(currency);
+      }
+
       setShowModal(false);
       onRefresh();
     } catch (err: any) {
@@ -112,6 +119,9 @@ export default function AccountsView({
     }
   };
 
+  // Determine display currency for combined total balance (if single account or primary account has currency)
+  const primaryCurrency = accounts.length > 0 && accounts[0].currency ? accounts[0].currency : userCurrency;
+
   return (
     <div className="w-full space-y-6">
       {/* Header */}
@@ -134,7 +144,7 @@ export default function AccountsView({
       <div className="ui-card p-4 flex items-center justify-between">
         <div>
           <span className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Combined Total Balance</span>
-          <h3 className="text-2xl font-bold font-mono text-zinc-100 mt-0.5">{formatCurrency(totalBalance, userCurrency)}</h3>
+          <h3 className="text-2xl font-bold font-mono text-zinc-100 mt-0.5">{formatCurrency(totalBalance, primaryCurrency)}</h3>
         </div>
       </div>
 

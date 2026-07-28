@@ -13,6 +13,14 @@ export default function AccountsPage() {
           onRefresh={fetchData}
           onSeedData={onSeedData}
           userCurrency={userCurrency}
+          onCurrencyChange={async (newCurrency) => {
+            await fetch("/api/user/currency", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ currency: newCurrency }),
+            });
+            fetchData();
+          }}
         />
       )}
     </AppShell>
